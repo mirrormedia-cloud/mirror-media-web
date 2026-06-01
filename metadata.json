@@ -1,0 +1,12 @@
+{
+  "name": "StreamAdmin - Premium OTT Management",
+  "description": "A high-performance management dashboard for OTT and video streaming platforms, featuring robust authentication, profile management, and comprehensive content analytics.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "AI-powered content moderation",
+    "Real-time analytics",
+    "Dynamic content scheduling"
+  ]
+}

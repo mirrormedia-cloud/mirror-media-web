@@ -1,0 +1,674 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  
+  --color-brand-emerald: #10B981;
+  --color-brand-blue: #3B82F6;
+  
+  /* Dynamic Backgrounds and Text */
+  --color-bg-main: var(--bg-main);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-aside: var(--bg-aside);
+  --color-bg-card: var(--bg-main);
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
+  --color-border-subtle: var(--border-subtle);
+}
+
+:root {
+  --bg-main: #0A0C10;
+  --bg-surface: rgba(16, 18, 22, 0.8);
+  --bg-aside: #0A0C10;
+  /* Elevated solid surface for overlays / popovers — must contrast
+     against --bg-main (which is the same value as --bg-aside in dark
+     mode, so popovers using --bg-aside become invisible). */
+  --bg-elevated: #161922;
+  --text-main: #F1F5F9;
+  --text-muted: #94A3B8;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+}
+
+.light {
+  --bg-main: #F8FAFC;
+  --bg-surface: rgba(255, 255, 255, 0.8);
+  --bg-aside: #FFFFFF;
+  --bg-elevated: #FFFFFF;
+  --text-main: #0F172A;
+  --text-muted: #64748B;
+  --border-subtle: rgba(15, 23, 42, 0.08);
+}
+
+@layer base {
+  /*
+   * Root font-size shrink — equivalent to ~85% browser zoom across the whole
+   * app. Tailwind's spacing/typography utilities (p-4, text-sm, gap-3, etc.)
+   * are rem-based, so reducing the root font-size proportionally scales:
+   *   • all padding / margin / gap utilities
+   *   • all text-* font sizes
+   *   • all rounded-* corners (use rem)
+   *   • icon sizes that use em
+   *
+   * Pixel-based things (border-1, lucide icon `size={...}` props, fixed
+   * widths like w-[280px]) intentionally don't scale — keeping them stable
+   * preserves crisp borders and avoids tiny illegible icons.
+   *
+   * 0.875rem = 14px (vs default 16px) ≈ 87.5%. If you want it tighter, drop
+   * to 0.85rem; if too small, raise to 0.9375rem (15px).
+   */
+  html {
+    font-size: 87.5%;
+  }
+
+  body {
+    @apply bg-bg-main text-text-main font-sans antialiased transition-colors duration-300;
+  }
+
+  /*
+   * Global checkbox styling — matches the dashboard's emerald → blue gradient
+   * theme. Native checkboxes are notoriously hard to style consistently
+   * across browsers; we opt out of the native chrome via `appearance: none`
+   * and draw our own box using two stacked background layers + a gradient
+   * border drawn with the dual-background trick.
+   *
+   * Strategy: the checkbox is its own button with a 2px transparent border;
+   * background-clip splits the gradient between the inner area (transparent
+   * when unchecked, gradient when checked) and the border (always gradient).
+   * The check mark when ticked is a CSS-drawn caret using the ::after pseudo.
+   *
+   * Indeterminate, disabled, and focus states are also styled. Tailwind's
+   * `accent-*` utilities are overridden by `appearance: none` — the existing
+   * `accent-brand-emerald` className is now a no-op but does no harm.
+   */
+  /*
+   * Strategy: gradient-painted box, then mask-composite carves the interior
+   * out to leave a 2px gradient ring with a TRUE transparent inside (so
+   * whatever is behind the checkbox shows through, not a solid color).
+   *
+   * On :checked we drop the mask entirely — the gradient now fills the
+   * whole box — and the ::after pseudo-element draws a white check caret
+   * on top. ::before carries the gradient shadow so it can be tweaked
+   * independently of the inner check's positioning.
+   */
+  input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 0.375rem;
+    flex-shrink: 0;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+    /* The full square is painted with the brand gradient. */
+    background: linear-gradient(135deg, #10B981 0%, #3B82F6 100%);
+    /* mask-composite carves out the interior, leaving only the 2px ring
+     * visible. The double-mask layers + `exclude` give us a hollow box
+     * with a true transparent core. */
+    padding: 2px;
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    box-shadow:
+      0 4px 12px -4px rgba(16, 185, 129, 0.35),
+      0 4px 12px -4px rgba(59, 130, 246, 0.25);
+  }
+
+  input[type="checkbox"]:hover:not(:disabled) {
+    box-shadow:
+      0 6px 16px -3px rgba(16, 185, 129, 0.5),
+      0 6px 16px -3px rgba(59, 130, 246, 0.4);
+    transform: translateY(-1px);
+  }
+
+  /* Checked: drop the mask so the gradient fills the box, intensify the glow,
+   * and let ::after render the check caret on top. */
+  input[type="checkbox"]:checked {
+    -webkit-mask: none;
+    mask: none;
+    padding: 0;
+    box-shadow:
+      0 0 0 3px rgba(16, 185, 129, 0.15),
+      0 6px 18px -2px rgba(16, 185, 129, 0.5),
+      0 6px 18px -2px rgba(59, 130, 246, 0.45);
+  }
+
+  input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    /* Slightly above-center so the caret reads as visually centred. */
+    transform: translate(-50%, -60%) rotate(45deg);
+    width: 0.3rem;
+    height: 0.55rem;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+  }
+
+  /* Indeterminate state — set via input.indeterminate = true in JS. Same
+   * filled gradient as :checked, with a horizontal bar instead of a caret. */
+  input[type="checkbox"]:indeterminate {
+    -webkit-mask: none;
+    mask: none;
+    padding: 0;
+    box-shadow:
+      0 0 0 3px rgba(16, 185, 129, 0.15),
+      0 6px 18px -2px rgba(16, 185, 129, 0.5),
+      0 6px 18px -2px rgba(59, 130, 246, 0.45);
+  }
+
+  input[type="checkbox"]:indeterminate::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 0.55rem;
+    height: 2px;
+    background: white;
+    border-radius: 1px;
+  }
+
+  input[type="checkbox"]:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 3px rgba(16, 185, 129, 0.4),
+      0 6px 18px -2px rgba(16, 185, 129, 0.5),
+      0 6px 18px -2px rgba(59, 130, 246, 0.45);
+  }
+
+  input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+    box-shadow: none;
+    transform: none;
+  }
+
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  /*
+   * Date / time inputs — `color-scheme` tells the browser to render the
+   * native popup (calendar grid, time spinner) in dark mode so it stops
+   * looking like a stray Windows-light dialog inside our dashboard.
+   * The picker indicator itself is filtered white because the default
+   * glyph is dark and disappears against `bg-bg-card`.
+   */
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"],
+  input[type="month"],
+  input[type="week"] {
+    color-scheme: dark;
+  }
+  .light input[type="date"],
+  .light input[type="time"],
+  .light input[type="datetime-local"],
+  .light input[type="month"],
+  .light input[type="week"] {
+    color-scheme: light;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  input[type="month"]::-webkit-calendar-picker-indicator,
+  input[type="week"]::-webkit-calendar-picker-indicator {
+    /* invert + slight transparency so the icon reads white but doesn't
+     * shout louder than the value itself. Uses a brightness filter combo
+     * because invert(1) alone leaves coloured icons looking off. */
+    filter: invert(1) brightness(1.3);
+    opacity: 0.7;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator:hover,
+  input[type="time"]::-webkit-calendar-picker-indicator:hover,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
+  input[type="month"]::-webkit-calendar-picker-indicator:hover,
+  input[type="week"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+  }
+  .light input[type="date"]::-webkit-calendar-picker-indicator,
+  .light input[type="time"]::-webkit-calendar-picker-indicator,
+  .light input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  .light input[type="month"]::-webkit-calendar-picker-indicator,
+  .light input[type="week"]::-webkit-calendar-picker-indicator {
+    filter: none;
+  }
+
+  /*
+   * Themed range slider — used by ThemedColorPicker for hue / lightness.
+   * Track is whatever background the caller paints (rainbow gradient,
+   * etc.); we just normalise the height + draw a small white thumb so
+   * the slider stays visually consistent with the dashboard.
+   */
+  input[type="range"].themed-range {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border-subtle);
+    cursor: pointer;
+    outline: none;
+  }
+  input[type="range"].themed-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    background: #ffffff;
+    border: 2px solid #0A0C10;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+  }
+  input[type="range"].themed-range::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    background: #ffffff;
+    border: 2px solid #0A0C10;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-bg-surface backdrop-blur-xl border border-border-subtle rounded-3xl shadow-2xl transition-all duration-300;
+  }
+  
+  .btn-primary {
+    @apply relative overflow-hidden bg-gradient-to-r from-brand-emerald to-brand-blue text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-300 hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .input-field {
+    @apply w-full bg-black/5 dark:bg-white/5 border border-border-subtle rounded-2xl px-4 py-3 text-text-main placeholder-text-muted/60 transition-all focus:outline-none focus:ring-2 focus:ring-brand-emerald/50 focus:border-brand-emerald;
+  }
+
+  .nav-blur {
+    @apply sticky top-0 z-50 bg-bg-main/80 backdrop-blur-md border-b border-border-subtle;
+  }
+}
+
+/* ── Custom Scrollbar ────────────────────────────────────────────────
+ * Slim 6px / 6px (vertical / horizontal), theme-aware via CSS vars.
+ * Track stays subtle so it doesn't fight the content; thumb takes a
+ * brand-emerald hover so users get clear feedback. Firefox gets the
+ * `scrollbar-width` + `scrollbar-color` shorthand for parity.
+ *
+ * Tokens (set in :root / .light blocks below):
+ *   --scrollbar-track  — bare-channel colour
+ *   --scrollbar-thumb  — idle thumb
+ *   --scrollbar-thumb-hover — hover thumb (brand-tinted)
+ *   --scrollbar-thumb-active — active drag thumb
+ */
+:root {
+  --scrollbar-track: rgba(255, 255, 255, 0.02);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.12);
+  --scrollbar-thumb-hover: rgba(16, 185, 129, 0.45);
+  --scrollbar-thumb-active: rgba(16, 185, 129, 0.65);
+}
+.light {
+  --scrollbar-track: rgba(15, 23, 42, 0.04);
+  --scrollbar-thumb: rgba(15, 23, 42, 0.18);
+  --scrollbar-thumb-hover: rgba(16, 185, 129, 0.55);
+  --scrollbar-thumb-active: rgba(16, 185, 129, 0.75);
+}
+
+/* Theme-aware logo tuning. The brand logo (logo.png) reads well on dark
+   backgrounds out of the box; in light mode its palest highlights wash out,
+   so we darken + saturate a touch and add a soft slate drop-shadow to keep
+   the silhouette legible. */
+.mirror-logo {
+  transition: filter 200ms ease;
+}
+.light .mirror-logo {
+  filter: brightness(0.82) saturate(1.15)
+    drop-shadow(0 1px 2px rgba(15, 23, 42, 0.18));
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+/* WebKit / Chromium — both axes */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 999px;
+  transition: background 120ms ease;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+::-webkit-scrollbar-thumb:active {
+  background: var(--scrollbar-thumb-active);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Utility — opt-in to an even slimmer 4px scrollbar for cramped
+   surfaces (popovers, drawer side panels). Drop the class on any
+   scrollable wrapper that needs it. */
+.scroll-slim::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+/* FullCalendar — dark/light theme overrides matched to the dashboard tokens.
+ * The library ships its own CSS but only via CSS custom properties; everything
+ * below either redefines those variables or restyles the small set of classes
+ * that don't expose vars. */
+.fc {
+  --fc-border-color: var(--border-subtle);
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: transparent;
+  --fc-neutral-text-color: var(--text-muted);
+  --fc-today-bg-color: rgba(16, 185, 129, 0.08);
+  --fc-now-indicator-color: #10B981;
+  --fc-event-bg-color: #3B82F6;
+  --fc-event-border-color: transparent;
+  --fc-event-text-color: #ffffff;
+  --fc-list-event-hover-bg-color: rgba(255, 255, 255, 0.04);
+  --fc-highlight-color: rgba(59, 130, 246, 0.15);
+  font-family: var(--font-sans);
+  color: var(--text-main);
+}
+
+.fc .fc-scrollgrid,
+.fc .fc-scrollgrid td,
+.fc .fc-scrollgrid th {
+  border-color: var(--border-subtle);
+}
+
+.fc .fc-col-header-cell {
+  background: transparent;
+  padding: 0.625rem 0;
+}
+.fc .fc-col-header-cell-cushion {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.5rem;
+  text-decoration: none !important;
+}
+
+.fc .fc-daygrid-day-number,
+.fc .fc-list-day-text,
+.fc .fc-list-day-side-text {
+  color: var(--text-main);
+  text-decoration: none !important;
+  font-weight: 600;
+  padding: 0.4rem 0.55rem;
+}
+
+.fc .fc-daygrid-day-top {
+  flex-direction: row;
+}
+
+.fc .fc-day-other .fc-daygrid-day-number {
+  opacity: 0.35;
+}
+
+.fc .fc-day-today {
+  background: rgba(16, 185, 129, 0.06) !important;
+}
+.fc .fc-day-today .fc-daygrid-day-number {
+  background: linear-gradient(135deg, #10B981, #3B82F6);
+  color: #fff;
+  border-radius: 0.6rem;
+  padding: 0.2rem 0.55rem;
+  margin: 0.35rem 0.4rem;
+  box-shadow: 0 4px 14px -4px rgba(16, 185, 129, 0.5);
+}
+
+.fc .fc-day-sat,
+.fc .fc-day-sun {
+  background: rgba(255, 255, 255, 0.015);
+}
+.light .fc .fc-day-sat,
+.light .fc .fc-day-sun {
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.fc-theme-standard td,
+.fc-theme-standard th {
+  border-color: var(--border-subtle);
+}
+
+.fc .fc-timegrid-slot,
+.fc .fc-timegrid-axis-cushion,
+.fc .fc-timegrid-slot-label-cushion {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+.fc .fc-timegrid-slot {
+  height: 2.4rem;
+}
+
+.fc .fc-event {
+  border-radius: 0.55rem;
+  padding: 2px 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border: none;
+  box-shadow: 0 2px 6px -2px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.fc .fc-event:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.55);
+}
+.fc .fc-event-title,
+.fc .fc-event-time {
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Time-grid (Week / Day) events live in narrow side-by-side columns
+   when several start at the same minute (slotEventOverlap=false).
+   Trim padding so the title isn't entirely eaten by chrome, and let
+   the inner content stack the time + title vertically. */
+.fc .fc-timegrid-event {
+  padding: 1px 4px;
+  min-height: 18px;
+}
+.fc .fc-timegrid-event .fc-event-main {
+  padding: 0;
+  font-size: 0.66rem;
+  line-height: 1.15;
+}
+.fc .fc-timegrid-event .fc-event-time {
+  font-size: 0.6rem;
+  opacity: 0.85;
+  margin-bottom: 1px;
+}
+
+/* Visual gap between adjacent / stacked events so side-by-side
+   columns and dayGrid rows have clear breathing room. FullCalendar
+   positions events with absolute insets, so we offset via padding
+   on the wrapping `harness` element + the event itself for a
+   double layer of separation. ~6px total reads as a clear gutter
+   without crowding the column. */
+.fc .fc-timegrid-event-harness {
+  padding: 2px 3px 4px 3px;
+}
+.fc .fc-timegrid-event {
+  margin: 0 1px;
+}
+.fc .fc-daygrid-event {
+  margin: 2px 3px;
+}
+.fc .fc-daygrid-block-event,
+.fc .fc-daygrid-dot-event {
+  margin-top: 3px;
+}
+
+/* Multi-day bars: a single block event that spans multiple days renders
+   as ONE element across cells. We strip the side margins on the *inner*
+   segments so the bar reads as a continuous strip; FullCalendar marks
+   continuation segments with `fc-event-start`/`fc-event-end` — when
+   either side is missing, that side meets the cell edge cleanly. The
+   bar also gets a chunkier height + horizontal padding so a 2-month
+   event reads as a real "timeline" rather than a 6-px hairline. */
+.fc .fc-daygrid-block-event {
+  padding: 3px 8px;
+  min-height: 20px;
+  border-radius: 0.4rem;
+}
+.fc .fc-daygrid-block-event:not(.fc-event-start) {
+  margin-left: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.fc .fc-daygrid-block-event:not(.fc-event-end) {
+  margin-right: 0;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+/* Single-day timed events that now render as block (eventDisplay=block)
+   still need a clearly readable title — bump the line-height slightly. */
+.fc .fc-daygrid-block-event .fc-event-title {
+  line-height: 1.2;
+}
+
+.fc .fc-list {
+  border-color: var(--border-subtle);
+  border-radius: 1rem;
+  overflow: hidden;
+}
+.fc .fc-list-day-cushion {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+.light .fc .fc-list-day-cushion {
+  background: rgba(15, 23, 42, 0.03) !important;
+}
+/* FullCalendar's default list view sticks the day header to the top of
+   the scroll container — that made "Sunday" (and every day after it as
+   you scroll) freeze in place. Force the day rows back to static flow
+   so they scroll with the rest of the list. */
+.fc .fc-list-sticky .fc-list-day > * {
+  position: static;
+}
+.fc .fc-list-event:hover td {
+  background: rgba(255, 255, 255, 0.04);
+}
+.fc .fc-list-empty {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+/* "+N more" day popover. Uses an elevated solid background (NOT
+   --bg-aside, which equals --bg-main in dark mode and produced a
+   transparent-looking popover that bled into the grid behind) plus a
+   bigger shadow + brighter header band so the events stack reads as
+   one card lifted above the calendar. */
+.fc .fc-popover {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.9rem;
+  box-shadow:
+    0 24px 60px -12px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+  z-index: 50;
+  min-width: 220px;
+}
+/* Header must be FULLY opaque — a tinted overlay alone lets the
+   calendar-grid cells beneath bleed through (the "18" / "19" date
+   numbers showing inside the popover top row). Stack the elevated
+   solid first, then layer a subtle tint on top for separation from
+   the body. */
+.fc .fc-popover-header {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.04)),
+    var(--bg-elevated);
+  color: var(--text-main);
+  padding: 0.5rem 0.75rem;
+  font-weight: 700;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.light .fc .fc-popover-header {
+  background:
+    linear-gradient(rgba(15, 23, 42, 0.04), rgba(15, 23, 42, 0.04)),
+    var(--bg-elevated);
+}
+.fc .fc-popover-body {
+  background: var(--bg-elevated);
+  padding: 0.4rem 0.5rem;
+}
+.fc .fc-popover-body .fc-daygrid-event {
+  margin: 0.15rem 0;
+}
+
+.fc .fc-timegrid-now-indicator-line {
+  border-color: #10B981;
+}
+.fc .fc-timegrid-now-indicator-arrow {
+  border-color: #10B981;
+  color: #10B981;
+}
+
+.fc-direction-ltr .fc-timegrid-col-events {
+  margin: 0 2px;
+}
+
+/* Hide the library's default toolbar — the page renders its own. */
+.fc .fc-toolbar.fc-header-toolbar {
+  display: none;
+}
+
+/* Auth Backdrop Pattern */
+.auth-bg {
+  background: 
+    radial-gradient(circle at 0% 0%, rgba(16, 185, 129, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.12) 0%, transparent 50%),
+    var(--bg-main);
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  transition: background 0.3s ease;
+}
+
+.auth-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  pointer-events: none;
+}

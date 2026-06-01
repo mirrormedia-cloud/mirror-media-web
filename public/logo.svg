@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="240 130 320 330" width="100%" height="100%">
+  <defs>
+    <linearGradient id="left-cloud" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#1A3050"/>
+      <stop offset="100%" stop-color="#316C8A"/>
+    </linearGradient>
+
+    <linearGradient id="right-cloud" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#469695"/>
+      <stop offset="100%" stop-color="#9EE6BD"/>
+    </linearGradient>
+
+    <linearGradient id="top-cloud" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2A5C77"/>
+      <stop offset="100%" stop-color="#7AC2A2"/>
+    </linearGradient>
+
+    <linearGradient id="left-diag" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2E6985"/>
+      <stop offset="100%" stop-color="#10253F"/>
+    </linearGradient>
+
+    <linearGradient id="right-diag" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#80CDA5"/>
+      <stop offset="100%" stop-color="#3B848B"/>
+    </linearGradient>
+
+    <linearGradient id="left-pillar" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#162D4A"/>
+      <stop offset="100%" stop-color="#2D6682"/>
+    </linearGradient>
+
+    <linearGradient id="right-pillar" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#367A83"/>
+      <stop offset="100%" stop-color="#8DE0B0"/>
+    </linearGradient>
+
+    <linearGradient id="jewel-left" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6DA6B8"/>
+      <stop offset="100%" stop-color="#DDF1F6"/>
+    </linearGradient>
+
+    <linearGradient id="jewel-right" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#91CDBD"/>
+      <stop offset="100%" stop-color="#E4F7ED"/>
+    </linearGradient>
+  </defs>
+
+  <path d="M 300 250 A 100 100 0 0 1 500 250 L 452 250 A 52 52 0 0 0 348 250 Z" fill="url(#top-cloud)"/>
+
+  <path d="M 240 260 A 100 100 0 0 0 240 460 L 240 408 A 52 52 0 0 1 240 312 Z" fill="url(#left-cloud)"/>
+
+  <path d="M 560 260 A 100 100 0 0 1 560 460 L 560 408 A 52 52 0 0 0 560 312 Z" fill="url(#right-cloud)"/>
+
+  <polygon points="240,130 400,310 400,380 288,254" fill="url(#left-diag)"/>
+
+  <polygon points="560,130 400,310 400,380 512,254" fill="url(#right-diag)"/>
+
+  <polygon points="240,130 288,184 288,460 240,460" fill="url(#left-pillar)"/>
+
+  <polygon points="560,130 512,184 512,460 560,460" fill="url(#right-pillar)"/>
+
+  <polygon points="400,380 340,460 400,460" fill="url(#jewel-left)"/>
+  <polygon points="400,380 400,460 460,460" fill="url(#jewel-right)"/>
+
+</svg>
