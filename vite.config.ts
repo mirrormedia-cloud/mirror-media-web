@@ -10,7 +10,7 @@ export default defineConfig(({mode}) => {
     base: '/',
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(__dirname, './src'),
       },
     },
     server: {
