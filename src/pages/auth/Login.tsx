@@ -99,14 +99,14 @@ const Login: React.FC = () => {
               togglePassword={() => setShowPassword(!showPassword)}
               error={errors.password}
             />
-            <div className="flex justify-end">
+            {/* <div className="flex justify-end">
               <button
                 onClick={() => navigate('/forgot-password')}
                 className="text-xs font-semibold text-brand-emerald hover:text-brand-blue transition-colors"
               >
                 Forgot Password?
               </button>
-            </div>
+            </div> */}
           </div>
 
           {server_error && (
