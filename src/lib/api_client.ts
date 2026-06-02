@@ -62,10 +62,16 @@ api_client.interceptors.response.use(
         // Clear the token and bounce the user to /login. Done at axios-level so we
         // don't have to remember this in every page. window.location (not router
         // navigation) because axios runs outside the React tree.
-        if (error?.response?.status === 401 && typeof window !== "undefined") {
+        // Skip hard-redirect for /api/auth/me — that's the boot-time session
+        // check. A 401 there just means "not logged in"; AuthContext clears the
+        // user and RequireAuth redirects via React Router (no full page reload).
+        // For every other endpoint, a 401 means the token expired mid-session →
+        // clear + hard redirect so the user re-authenticates.
+        const is_me_check = (error?.config?.url ?? "").includes("/api/auth/me");
+        if (error?.response?.status === 401 && !is_me_check) {
             set_auth_token(null);
             // Don't loop if we're already on /login (e.g. login itself returned 401).
-            if (!window.location.pathname.startsWith("/login")) {
+            if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
                 window.location.href = "/login";
             }
         }
