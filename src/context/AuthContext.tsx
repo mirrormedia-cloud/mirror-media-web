@@ -186,7 +186,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         token_type: 'access_token' | 'id_token' = 'access_token',
     ): Promise<GoogleLoginResult> => {
         try {
-            const res = await api_client.post('/api/auth/sso/google-token', { token, token_type });
+            const res = await api_client.post('/api/auth/sso/google-token', { token, token_type, platform: 'web' });
             const env = normalize_envelope<{ type: string; user?: AuthUser; token?: string; details?: any }>(res.data);
             if (!env.success || !env.data) {
                 return { ok: false, error: env.message || 'Google sign-in failed' };
@@ -215,7 +215,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const login = useCallback(async (email: string, password: string) => {
         try {
-            const res = await api_client.post('/api/auth/login', { email, password });
+            const res = await api_client.post('/api/auth/login', { email, password, platform: 'web' });
             const env = normalize_envelope<{ token: string; user?: AuthUser }>(res.data);
             if (!env.success || !env.data?.token) {
                 return { ok: false, error: env.message || 'Login failed' };
