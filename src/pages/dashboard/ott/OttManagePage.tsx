@@ -1363,7 +1363,7 @@ const OttManagePage: React.FC = () => {
                       onClick={handle_download_all}
                       disabled={is_downloading_all}
                       className="flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl bg-bg-card border border-border-subtle text-text-main hover:border-brand-blue/50 hover:text-brand-blue transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                      title="Auto-capture all cards using your first captured video as the path reference, then download everything"
+                      title="Auto-capture & download everything"
                     >
                       {is_downloading_all ? (
                         <>

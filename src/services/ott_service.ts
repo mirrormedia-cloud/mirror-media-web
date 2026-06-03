@@ -525,6 +525,11 @@ export const ott_service = {
         }>(`/api/ott/${ott_id}/video_assets/bulk_delete`, { ids }, { timeout: 0 });
     },
 
+    /** Clear downloaded_at on all video assets for this OTT. Called after sync so new content is re-downloadable. */
+    async reset_downloaded(ott_id: string) {
+        return POST<{ updated: number }>(`/api/ott/${ott_id}/video_assets/reset_downloaded`, {});
+    },
+
     /** Build the direct download URL the browser navigates to. Backend streams the file. */
     get_video_download_url(ott_id: string, video_asset_id: string, mode?: "playlist") {
         const base = String(API_BASE_URL_RESOLVED).replace(/\/$/, "");
