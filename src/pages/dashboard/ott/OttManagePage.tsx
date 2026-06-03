@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -32,6 +32,7 @@ import {
   FileText,
   Calendar,
   Hash,
+  Download,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useOTT } from '../../../context/OTTContext';
@@ -113,6 +114,12 @@ const OttManagePage: React.FC = () => {
   // and the recursive renderer all push into the same map.
   const [expanded_children, setExpandedChildren] = useState<ExpandedMap>({});
   const [busy_action_keys, setBusyActionKeys] = useState<Record<string, boolean>>({});
+
+  const [is_downloading_all, setIsDownloadingAll] = useState(false);
+  const [download_all_progress, setDownloadAllProgress] = useState<{ total: number; done: number } | null>(null);
+  // Synchronous guard — checked before any async work so rapid double-clicks
+  // can't start a second download between React render cycles.
+  const download_in_progress = useRef(false);
 
   // Per-section page navigation state for paginated APIs in the Cards tab.
   // Keyed by api_id. Tracks current page + the next-state hint from the last
@@ -704,6 +711,122 @@ const OttManagePage: React.FC = () => {
     }
   };
 
+  const handle_download_all = async () => {
+    if (!ott_id || download_in_progress.current) return;
+    download_in_progress.current = true;
+
+    // Fetch ALL pages of video assets (backend caps at 200/page)
+    const fetch_all_video_assets = async () => {
+      const all: import('../../../types').VideoAsset[] = [];
+      let page = 1;
+      while (true) {
+        const r = await ott_service.get_video_assets(ott_id!, { limit: 200, page });
+        if (!r.success || !r.data) throw new Error(r.message || 'Failed to load video assets');
+        all.push(...r.data.items);
+        if (all.length >= r.data.total) break;
+        page += 1;
+      }
+      return all;
+    };
+
+    setIsDownloadingAll(true);
+    setDownloadAllProgress({ total: 0, done: 0 });
+    try {
+      // Step 1: Check if at least one video has been captured (provides the path reference)
+      const first_page = await ott_service.get_video_assets(ott_id, { limit: 1, page: 1 });
+      if (!first_page.success || !first_page.data) throw new Error(first_page.message || 'Failed to check video assets');
+
+      if (first_page.data.total === 0) {
+        toast(
+          'Capture at least one video first — click any card, choose "Capture Videos", pick the video URL path and save.',
+          { duration: 6000 },
+        );
+        return;
+      }
+
+      // Step 2: Load all existing assets to extract source_path references per section
+      const existing_all = await fetch_all_video_assets();
+
+      // Step 3: Auto-capture all cards for each section using the saved reference
+      if (card_sections) {
+        for (const section of card_sections.sections) {
+          const node = flat_apis.find(n => n.id === section.api_id);
+
+          // Option A: explicit capture_mapping saved on the node (set via mapping mode)
+          const mapping = (node?.card_config as any)?.capture_mapping;
+          if (Array.isArray(mapping?.video_url_paths) && mapping.video_url_paths.length > 0) {
+            await ott_service.capture_video_assets(ott_id, {
+              api_node_id: section.api_id,
+              list_path: mapping.list_path ?? section.list_path ?? null,
+              video_url_paths: mapping.video_url_paths,
+              title_path: mapping.title_path ?? null,
+              description_path: mapping.description_path ?? null,
+              thumbnail_path: mapping.thumbnail_path ?? null,
+              quality_path: mapping.quality_path ?? null,
+              language_path: mapping.language_path ?? null,
+              duration_path: mapping.duration_path ?? null,
+            });
+            continue;
+          }
+
+          // Option B: reconstruct video_url_paths from metadata.source_path of prior captures
+          const prior = existing_all.filter(a => a.api_node_id === section.api_id);
+          if (prior.length > 0) {
+            const source_paths = [
+              ...new Set(
+                prior
+                  .map(a => a.metadata?.source_path as string | undefined)
+                  .filter((p): p is string => typeof p === 'string' && p.length > 0),
+              ),
+            ];
+            if (source_paths.length > 0) {
+              await ott_service.capture_video_assets(ott_id, {
+                api_node_id: section.api_id,
+                list_path: section.list_path ?? null,
+                video_url_paths: source_paths,
+              });
+            }
+          }
+        }
+      }
+
+      // Step 4: Re-fetch ALL assets (now includes freshly captured ones) — paginate fully
+      const all_assets = await fetch_all_video_assets();
+      const assets = all_assets.filter(a =>
+        ['mp4', 'webm', 'mov', 'mkv', 'ts'].includes(a.video_type ?? '') &&
+        !a.downloaded_at,
+      );
+
+      if (assets.length === 0) {
+        toast('All videos have already been downloaded.', { duration: 4000 });
+        return;
+      }
+
+      setDownloadAllProgress({ total: assets.length, done: 0 });
+
+      // Step 5: Trigger browser downloads sequentially
+      for (let i = 0; i < assets.length; i++) {
+        const url = ott_service.get_video_download_url(ott_id, assets[i].id);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = '';
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setDownloadAllProgress({ total: assets.length, done: i + 1 });
+        await new Promise<void>(resolve => setTimeout(resolve, 600));
+      }
+      toast.success(`Started downloading ${assets.length} video${assets.length === 1 ? '' : 's'}`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Download all failed');
+    } finally {
+      download_in_progress.current = false;
+      setIsDownloadingAll(false);
+      setDownloadAllProgress(null);
+    }
+  };
+
   const handle_delete = async () => {
     if (!ott_id || !ott) return;
     const ok = await confirm({
@@ -1231,7 +1354,33 @@ const OttManagePage: React.FC = () => {
                   </button>
                 </div>
               ) : (
-                card_sections.sections.map(section => {
+                <>
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="text-xs text-text-muted">
+                      {card_sections.sections.reduce((acc, s) => acc + s.cards.length, 0)} cards across {card_sections.sections.length} section{card_sections.sections.length === 1 ? '' : 's'}
+                    </p>
+                    <button
+                      onClick={handle_download_all}
+                      disabled={is_downloading_all}
+                      className="flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl bg-bg-card border border-border-subtle text-text-main hover:border-brand-blue/50 hover:text-brand-blue transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                      title="Auto-capture all cards using your first captured video as the path reference, then download everything"
+                    >
+                      {is_downloading_all ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" />
+                          {download_all_progress && download_all_progress.total > 0
+                            ? `${download_all_progress.done}/${download_all_progress.total}`
+                            : 'Loading…'}
+                        </>
+                      ) : (
+                        <>
+                          <Download size={14} />
+                          Download All
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  {card_sections.sections.map(section => {
                   const section_node = flat_apis.find(n => n.id === section.api_id);
                   const is_paginated = !!section_node?.pagination_enabled && !!section_node?.pagination_type;
                   const page_state = get_section_state(section.api_id);
@@ -1377,7 +1526,8 @@ const OttManagePage: React.FC = () => {
                       />
                     </div>
                   );
-                })
+                })}
+                </>
               )}
             </div>
           )}

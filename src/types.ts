@@ -357,6 +357,7 @@ export interface VideoAsset {
   duration: string | null;
   metadata: Record<string, any>;
   status: string;
+  downloaded_at: string | null;
   is_saved_to_library?: boolean;
   library_item_id?: string | null;
   library_status?: LibraryItemStatus | null;
