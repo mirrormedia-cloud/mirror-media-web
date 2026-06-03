@@ -20,6 +20,7 @@ import {
   RefreshCw,
   Save,
   CheckCircle2,
+  Download,
 } from 'lucide-react';
 import { ApiNode, BuiltCard, CardAction, CardButtonStyle } from '../../types';
 import { ott_service } from '../../services/ott_service';
@@ -109,6 +110,10 @@ interface Props {
   on_toggle_card_select?: (card: BuiltCard) => void;
   /** Show "Saved" badge on cards that already exist in the library. */
   saved_to_library_indices?: Set<number>;
+  /** If provided, renders a per-card download button that calls this when clicked. */
+  on_download_card?: (card: BuiltCard) => void;
+  /** Per-card download states. Key = `${api_node_id}:${item_key}`. */
+  card_download_states?: Map<string, 'idle' | 'downloading' | 'done'>;
 }
 
 const expansion_key_for = (api_id: string, item_key: string, child_api_id: string) =>
@@ -136,6 +141,8 @@ const NestedCardRenderer: React.FC<Props> = ({
   selected_card_indices,
   on_toggle_card_select,
   saved_to_library_indices,
+  on_download_card,
+  card_download_states,
 }) => {
   const [busy_default_keys, set_busy_default_keys] = useState<Record<string, boolean>>({});
 
@@ -361,6 +368,39 @@ const NestedCardRenderer: React.FC<Props> = ({
                           <Loader2 size={32} className="animate-spin text-brand-emerald" />
                         </div>
                       )}
+                      {/* Per-card download button — bottom-right of image */}
+                      {on_download_card && (() => {
+                        const dl_status = card_download_states?.get(`${api_node.id}:${card.item_key}`) ?? 'idle';
+                        return (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (dl_status === 'idle') on_download_card(card);
+                            }}
+                            disabled={dl_status === 'downloading'}
+                            title={
+                              dl_status === 'done'
+                                ? 'Episodes downloaded'
+                                : dl_status === 'downloading'
+                                  ? 'Downloading episodes…'
+                                  : 'Download all episodes'
+                            }
+                            className={`absolute bottom-3 right-3 z-10 p-1.5 rounded-lg backdrop-blur-md transition-all disabled:cursor-default ${
+                              dl_status === 'done'
+                                ? 'bg-brand-emerald/80 text-white opacity-100'
+                                : dl_status === 'downloading'
+                                  ? 'bg-amber-500/80 text-white opacity-100'
+                                  : 'bg-black/40 text-white opacity-50 hover:opacity-100'
+                            }`}
+                          >
+                            {dl_status === 'done'
+                              ? <CheckCircle2 size={14} />
+                              : dl_status === 'downloading'
+                                ? <Loader2 size={14} className="animate-spin" />
+                                : <Download size={14} />}
+                          </button>
+                        );
+                      })()}
                     </div>
 
                     <div className="p-5 flex-1 flex flex-col gap-3">

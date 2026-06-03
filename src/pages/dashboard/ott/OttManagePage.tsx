@@ -51,6 +51,7 @@ import {
   ApiCallLog,
   OttCardsResponse,
   CardAction,
+  VideoAsset,
 } from '../../../types';
 import { replaceArrayIndexInPath, getValueByPath } from '../../../utils/apiDataUtils';
 import { ott_service, notify_ott_list_updated } from '../../../services/ott_service';
@@ -120,6 +121,20 @@ const OttManagePage: React.FC = () => {
   // Synchronous guard — checked before any async work so rapid double-clicks
   // can't start a second download between React render cycles.
   const download_in_progress = useRef(false);
+
+  // Per-card download state: key = `${api_node_id}:${item_key}`, persisted in localStorage.
+  const ls_key = ott_id ? `ott_dl_done:${ott_id}` : null;
+  const [card_download_state, setCardDownloadState] = useState<Map<string, 'idle' | 'downloading' | 'done'>>(() => {
+    if (!ott_id) return new Map();
+    try {
+      const raw = localStorage.getItem(`ott_dl_done:${ott_id}`);
+      if (!raw) return new Map();
+      const keys: string[] = JSON.parse(raw);
+      return new Map(keys.map(k => [k, 'done'] as const));
+    } catch {
+      return new Map();
+    }
+  });
 
   // Per-section page navigation state for paginated APIs in the Cards tab.
   // Keyed by api_id. Tracks current page + the next-state hint from the last
@@ -763,6 +778,100 @@ const OttManagePage: React.FC = () => {
       download_in_progress.current = false;
       setIsDownloadingAll(false);
       setDownloadAllProgress(null);
+    }
+  };
+
+  const handle_download_card = async ({
+    card,
+    parent_api_id,
+    default_child_api_id,
+    actions,
+    source_response_id,
+    parent_item_key,
+  }: {
+    card: BuiltCard;
+    parent_api_id: string;
+    default_child_api_id?: string | null;
+    actions: CardAction[];
+    source_response_id?: string | null;
+    parent_item_key?: string | null;
+  }) => {
+    if (!ott_id) return;
+
+    const child_api_id =
+      default_child_api_id ??
+      actions.find(a => a.action_type === 'call_child_api')?.child_api_id ??
+      null;
+
+    if (!child_api_id) {
+      toast.error('No episodes API configured for this card');
+      return;
+    }
+
+    const state_key = `${parent_api_id}:${card.item_key}`;
+    setCardDownloadState(prev => new Map(prev).set(state_key, 'downloading'));
+
+    try {
+      await ott_service.call_child_api_from_card({
+        ott_id,
+        child_api_id,
+        parent_api_id,
+        card_index: card.index,
+        item_key: card.item_key,
+        parent_item_key: parent_item_key ?? undefined,
+        source_response_id: source_response_id ?? undefined,
+        fetch_all_pages: true,
+      });
+
+      await ott_service.auto_capture(ott_id);
+
+      const assets: VideoAsset[] = [];
+      let pg = 1;
+      while (true) {
+        const r = await ott_service.get_video_assets(ott_id, { limit: 200, page: pg });
+        if (!r.success || !r.data) throw new Error(r.message || 'Failed to load video assets');
+        assets.push(...r.data.items.filter(a =>
+          ['mp4', 'webm', 'mov', 'mkv', 'ts'].includes(a.video_type ?? '') && !a.downloaded_at,
+        ));
+        if (assets.length >= r.data.total || r.data.items.length < 200) break;
+        pg += 1;
+      }
+
+      const mark_done = (key: string) => {
+        setCardDownloadState(prev => {
+          const next = new Map(prev).set(key, 'done');
+          if (ls_key) {
+            try {
+              localStorage.setItem(ls_key, JSON.stringify([...next.entries()].filter(([, v]) => v === 'done').map(([k]) => k)));
+            } catch { /* quota — ignore */ }
+          }
+          return next;
+        });
+      };
+
+      if (assets.length === 0) {
+        toast('All episodes already downloaded.');
+        mark_done(state_key);
+        return;
+      }
+
+      for (let i = 0; i < assets.length; i++) {
+        const url = ott_service.get_video_download_url(ott_id, assets[i].id);
+        const a_el = document.createElement('a');
+        a_el.href = url;
+        a_el.download = '';
+        a_el.style.display = 'none';
+        document.body.appendChild(a_el);
+        a_el.click();
+        document.body.removeChild(a_el);
+        await new Promise<void>(resolve => setTimeout(resolve, 600));
+      }
+
+      toast.success(`Downloading ${assets.length} episode${assets.length === 1 ? '' : 's'}`);
+      mark_done(state_key);
+    } catch (err: any) {
+      toast.error(err?.message || 'Download failed');
+      setCardDownloadState(prev => new Map(prev).set(state_key, 'idle'));
     }
   };
 
@@ -1462,6 +1571,13 @@ const OttManagePage: React.FC = () => {
                         on_open_popup={open_card_action_popup}
                         on_open_card_builder={open_card_builder}
                         on_card_action={handle_card_action}
+                        on_download_card={(card) => handle_download_card({
+                          card,
+                          parent_api_id: section.api_id,
+                          default_child_api_id: section_node?.default_child_api_id ?? section.default_child_api_id,
+                          actions: section.actions,
+                        })}
+                        card_download_states={card_download_state}
                       />
                     </div>
                   );
