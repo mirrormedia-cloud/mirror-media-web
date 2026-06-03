@@ -808,13 +808,32 @@ const OttManagePage: React.FC = () => {
   }) => {
     if (!ott_id) return;
 
+    // Prefer a child API that already has capture_mapping configured.
+    // Fall back to default_child_api_id or the first call_child_api action.
+    const has_mapping = (id: string) => {
+      const node = flat_apis.find(n => n.id === id);
+      const m = (node?.card_config as any)?.capture_mapping;
+      return Array.isArray(m?.video_url_paths) && m.video_url_paths.length > 0;
+    };
+
+    const candidate_ids: string[] = [
+      ...(default_child_api_id ? [default_child_api_id] : []),
+      ...actions.filter(a => a.action_type === 'call_child_api' && a.child_api_id).map(a => a.child_api_id!),
+      ...flat_apis.filter(n => n.parent_id === parent_api_id).map(n => n.id),
+    ];
+
     const child_api_id =
-      default_child_api_id ??
-      actions.find(a => a.action_type === 'call_child_api')?.child_api_id ??
+      candidate_ids.find(has_mapping) ??
+      candidate_ids[0] ??
       null;
 
     if (!child_api_id) {
-      toast.error('No episodes API configured for this card');
+      toast.error('No child API configured for this card');
+      return;
+    }
+
+    if (!has_mapping(child_api_id)) {
+      toast.error('Configure capture mapping on the episodes API first (open a card → Configure Mapping)');
       return;
     }
 
