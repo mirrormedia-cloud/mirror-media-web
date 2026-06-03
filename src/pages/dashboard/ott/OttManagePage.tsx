@@ -715,87 +715,26 @@ const OttManagePage: React.FC = () => {
     if (!ott_id || download_in_progress.current) return;
     download_in_progress.current = true;
 
-    // Fetch ALL pages of video assets (backend caps at 200/page)
-    const fetch_all_video_assets = async () => {
-      const all: import('../../../types').VideoAsset[] = [];
-      let page = 1;
-      while (true) {
-        const r = await ott_service.get_video_assets(ott_id!, { limit: 200, page });
-        if (!r.success || !r.data) throw new Error(r.message || 'Failed to load video assets');
-        all.push(...r.data.items);
-        if (all.length >= r.data.total) break;
-        page += 1;
-      }
-      return all;
-    };
-
     setIsDownloadingAll(true);
     setDownloadAllProgress({ total: 0, done: 0 });
     try {
-      // Step 1: Check if at least one video has been captured (provides the path reference)
-      const first_page = await ott_service.get_video_assets(ott_id, { limit: 1, page: 1 });
-      if (!first_page.success || !first_page.data) throw new Error(first_page.message || 'Failed to check video assets');
+      // Step 1: Auto-capture — scan ALL stored root + child API responses for video URLs.
+      // New URLs → new OttVideoAsset rows with downloaded_at = null.
+      // Existing already-downloaded rows → untouched.
+      await ott_service.auto_capture(ott_id);
 
-      if (first_page.data.total === 0) {
-        toast(
-          'Capture at least one video first — click any card, choose "Capture Videos", pick the video URL path and save.',
-          { duration: 6000 },
-        );
-        return;
+      // Step 2: Fetch every undownloaded asset (paginate fully, backend caps at 200/page).
+      const assets: import('../../../types').VideoAsset[] = [];
+      let page = 1;
+      while (true) {
+        const r = await ott_service.get_video_assets(ott_id, { limit: 200, page });
+        if (!r.success || !r.data) throw new Error(r.message || 'Failed to load video assets');
+        assets.push(...r.data.items.filter(a =>
+          ['mp4', 'webm', 'mov', 'mkv', 'ts'].includes(a.video_type ?? '') && !a.downloaded_at,
+        ));
+        if (assets.length >= r.data.total || r.data.items.length < 200) break;
+        page += 1;
       }
-
-      // Step 2: Load all existing assets to extract source_path references per section
-      const existing_all = await fetch_all_video_assets();
-
-      // Step 3: Auto-capture all cards for each section using the saved reference
-      if (card_sections) {
-        for (const section of card_sections.sections) {
-          const node = flat_apis.find(n => n.id === section.api_id);
-
-          // Option A: explicit capture_mapping saved on the node (set via mapping mode)
-          const mapping = (node?.card_config as any)?.capture_mapping;
-          if (Array.isArray(mapping?.video_url_paths) && mapping.video_url_paths.length > 0) {
-            await ott_service.capture_video_assets(ott_id, {
-              api_node_id: section.api_id,
-              list_path: mapping.list_path ?? section.list_path ?? null,
-              video_url_paths: mapping.video_url_paths,
-              title_path: mapping.title_path ?? null,
-              description_path: mapping.description_path ?? null,
-              thumbnail_path: mapping.thumbnail_path ?? null,
-              quality_path: mapping.quality_path ?? null,
-              language_path: mapping.language_path ?? null,
-              duration_path: mapping.duration_path ?? null,
-            });
-            continue;
-          }
-
-          // Option B: reconstruct video_url_paths from metadata.source_path of prior captures
-          const prior = existing_all.filter(a => a.api_node_id === section.api_id);
-          if (prior.length > 0) {
-            const source_paths = [
-              ...new Set(
-                prior
-                  .map(a => a.metadata?.source_path as string | undefined)
-                  .filter((p): p is string => typeof p === 'string' && p.length > 0),
-              ),
-            ];
-            if (source_paths.length > 0) {
-              await ott_service.capture_video_assets(ott_id, {
-                api_node_id: section.api_id,
-                list_path: section.list_path ?? null,
-                video_url_paths: source_paths,
-              });
-            }
-          }
-        }
-      }
-
-      // Step 4: Re-fetch ALL assets (now includes freshly captured ones) — paginate fully
-      const all_assets = await fetch_all_video_assets();
-      const assets = all_assets.filter(a =>
-        ['mp4', 'webm', 'mov', 'mkv', 'ts'].includes(a.video_type ?? '') &&
-        !a.downloaded_at,
-      );
 
       if (assets.length === 0) {
         toast('All videos have already been downloaded.', { duration: 4000 });
@@ -804,7 +743,7 @@ const OttManagePage: React.FC = () => {
 
       setDownloadAllProgress({ total: assets.length, done: 0 });
 
-      // Step 5: Trigger browser downloads sequentially
+      // Step 3: Trigger browser downloads sequentially.
       for (let i = 0; i < assets.length; i++) {
         const url = ott_service.get_video_download_url(ott_id, assets[i].id);
         const a = document.createElement('a');
