@@ -335,13 +335,8 @@ const SocialUploadsPage: React.FC = () => {
                 </FilterGroup>
             </div>
 
-            {/* ── CARD GRID ──────────────────────────────────────────── */}
-            {loading && uploads.length === 0 ? (
-                /* Skeleton loading state */
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {Array.from({ length: 6 }).map((_, i) => <UploadSkeleton key={i} />)}
-                </div>
-            ) : uploads.length === 0 ? (
+            {/* ── HISTORY TABLE ──────────────────────────────────────── */}
+            {uploads.length === 0 && !loading ? (
                 /* Empty state */
                 <div className="relative overflow-hidden rounded-3xl border border-dashed border-border-subtle bg-white/5 backdrop-blur-sm p-16 text-center space-y-4">
                     <div className="absolute inset-0 bg-gradient-to-br from-brand-emerald/5 via-brand-blue/5 to-purple-500/5 pointer-events-none rounded-3xl" />
@@ -365,17 +360,37 @@ const SocialUploadsPage: React.FC = () => {
                 </div>
             ) : (
                 <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                        {uploads.map((u, idx) => (
-                            <UploadCard
-                                key={u.id}
-                                u={u}
-                                ott={u.ott_id ? ott_map.get(u.ott_id) ?? null : null}
-                                expanded={expanded_id === u.id}
-                                on_toggle={() => toggle(u.id)}
-                                stagger_ms={Math.min(idx * 40, 320)}
-                            />
-                        ))}
+                    <div className="rounded-2xl border border-border-subtle overflow-hidden bg-bg-card">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="border-b border-border-subtle bg-bg-surface/40">
+                                        <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-text-muted whitespace-nowrap">Title</th>
+                                        <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-text-muted whitespace-nowrap">Platform</th>
+                                        <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-text-muted whitespace-nowrap">OTT</th>
+                                        <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-text-muted whitespace-nowrap">Status</th>
+                                        <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-text-muted whitespace-nowrap">Scheduled</th>
+                                        <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-text-muted whitespace-nowrap">Published</th>
+                                        <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-text-muted whitespace-nowrap">Created</th>
+                                        <th className="px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-text-muted whitespace-nowrap"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {loading && uploads.length === 0
+                                        ? Array.from({ length: 8 }).map((_, i) => <UploadRowSkeleton key={i} />)
+                                        : uploads.map(u => (
+                                            <UploadRow
+                                                key={u.id}
+                                                u={u}
+                                                ott={u.ott_id ? ott_map.get(u.ott_id) ?? null : null}
+                                                expanded={expanded_id === u.id}
+                                                on_toggle={() => toggle(u.id)}
+                                            />
+                                        ))
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
                     {/* ── PAGINATION ─────────────────────────────────── */}
@@ -421,196 +436,127 @@ const SocialUploadsPage: React.FC = () => {
     );
 };
 
-// ── UploadCard ─────────────────────────────────────────────────────────
+// ── UploadRow ──────────────────────────────────────────────────────────
 
-const UploadCard: React.FC<{
+const UploadRow: React.FC<{
     u: SocialUploadRow;
     ott: OttPlatformSummary | null;
     expanded: boolean;
     on_toggle: () => void;
-    stagger_ms: number;
-}> = ({ u, ott, expanded, on_toggle, stagger_ms }) => {
-    const p_meta   = PLATFORM_META[u.platform];
-    const s_cfg    = STATUS_CONFIG[u.status] ?? STATUS_CONFIG.draft;
-    const lib      = u.library_item;
-    const sched    = u.schedule_item;
-    const is_copy  = is_copyright_takedown(u);
-    const title    = lib?.file_name || lib?.title || u.title || '(untitled)';
-    const folder   = lib?.parent_title ?? null;
-    const sched_label = sched?.title || (sched?.scheduled_at ? new Date(sched.scheduled_at).toLocaleString() : null);
-    const sched_batch = sched?.batch_name ?? null;
+}> = ({ u, ott, expanded, on_toggle }) => {
+    const p_meta  = PLATFORM_META[u.platform];
+    const s_cfg   = STATUS_CONFIG[u.status] ?? STATUS_CONFIG.draft;
+    const lib     = u.library_item;
+    const is_copy = is_copyright_takedown(u);
+    const title   = lib?.file_name || lib?.title || u.title || '(untitled)';
+    const folder  = lib?.parent_title ?? null;
+
+    const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' }) : '—';
 
     return (
-        <div
-            className={`group relative rounded-2xl border bg-white/[0.04] backdrop-blur-xl overflow-hidden transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 fill-mode-both ${expanded
-                ? 'border-brand-emerald/40 shadow-lg shadow-brand-emerald/10'
-                : 'border-white/10 hover:border-white/20 hover:shadow-lg hover:-translate-y-0.5'
-            }`}
-            style={{ animationDelay: `${stagger_ms}ms`, animationDuration: '400ms' }}
-        >
-            {/* Subtle gradient overlay */}
-            <div className={`absolute inset-0 pointer-events-none transition-opacity duration-300 ${expanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} bg-gradient-to-br from-brand-emerald/5 via-transparent to-brand-blue/5`} />
-
-            {/* ── TOP ROW: icon + title + status ─────────────────────── */}
-            <div className="relative flex items-start gap-3 p-4 pb-3">
-                {/* Media type icon */}
-                <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${p_meta.bg} ${p_meta.tone}`}>
-                    {file_icon(lib?.file_name)}
-                </div>
-
-                {/* Title block */}
-                <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-text-main truncate leading-snug" title={title}>
-                        {title}
-                    </p>
-                    {lib?.file_name && lib.file_name !== title && (
-                        <p className="text-[10px] text-text-muted truncate mt-0.5" title={lib.file_name}>{lib.file_name}</p>
-                    )}
-                </div>
-
-                {/* Status badge */}
-                <span className={`shrink-0 text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ring-1 ${s_cfg.cls} ${u.status === 'uploading' ? 'animate-pulse' : ''}`}>
-                    {s_cfg.label}
-                </span>
-            </div>
-
-            {/* ── MIDDLE: platform + OTT + folder ────────────────────── */}
-            <div className="relative px-4 pb-3 space-y-2">
-                {/* Platform chip */}
-                <div className="flex items-center gap-2">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold ${p_meta.bg} ${p_meta.tone}`}>
-                        <p_meta.Icon size={11} />
-                        {p_meta.label}
-                    </span>
-                    {u.media_url && (
-                        <a href={u.media_url} target="_blank" rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-[10px] text-brand-blue hover:underline ml-auto"
-                            onClick={e => e.stopPropagation()}>
-                            View <ExternalLink size={9} />
-                        </a>
-                    )}
-                </div>
-
-                {/* OTT info */}
-                <div className="flex items-start gap-1.5 text-[11px]">
-                    <Layers size={11} className="text-text-muted shrink-0 mt-0.5" />
-                    <span className="text-text-muted">OTT:</span>
-                    {ott ? (
-                        <span className="text-text-main font-medium truncate">{ott.name}</span>
-                    ) : u.ott_id ? (
-                        <span className="text-text-muted font-mono text-[9px] truncate">{u.ott_id.slice(0, 8)}…</span>
-                    ) : (
-                        <span className="text-text-muted italic">No OTT linked</span>
-                    )}
-                </div>
-
-                {/* Folder/story */}
-                {folder && (
-                    <div className="flex items-center gap-1.5 text-[11px]">
-                        <Folder size={11} className="text-text-muted shrink-0" />
-                        <span className="text-text-muted">Story:</span>
-                        <span className="text-text-main font-medium truncate">{folder}</span>
-                    </div>
-                )}
-
-                {/* Schedule info */}
-                {(sched_label || sched_batch) && (
-                    <div className="flex items-center gap-1.5 text-[11px]">
-                        <Calendar size={11} className="text-text-muted shrink-0" />
-                        <span className="text-text-muted">Schedule:</span>
-                        <span className="text-text-main font-medium truncate" title={sched_batch ?? sched_label ?? ''}>
-                            {sched_label || sched_batch}
-                        </span>
-                    </div>
-                )}
-            </div>
-
-            {/* ── DIVIDER + DATES ─────────────────────────────────────── */}
-            <div className="border-t border-white/[0.07] mx-4" />
-            <div className="relative px-4 py-3 grid grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
-                {u.scheduledAt && (
-                    <>
-                        <span className="text-text-muted">Scheduled</span>
-                        <span className="text-text-main tabular-nums">{new Date(u.scheduledAt).toLocaleString()}</span>
-                    </>
-                )}
-                {u.publishedAt && (
-                    <>
-                        <span className="text-text-muted">Published</span>
-                        <span className="text-brand-emerald tabular-nums font-medium">{new Date(u.publishedAt).toLocaleString()}</span>
-                    </>
-                )}
-                {u.createdAt && (
-                    <>
-                        <span className="text-text-muted">Created</span>
-                        <span className="text-text-main tabular-nums">{new Date(u.createdAt).toLocaleString()}</span>
-                    </>
-                )}
-            </div>
-
-            {/* ── ERROR MESSAGE ───────────────────────────────────────── */}
-            {u.error_message && (
-                <div className="relative mx-4 mb-3 rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2 flex items-start gap-2">
-                    {is_copy ? (
-                        <ShieldAlert size={12} className="text-red-400 shrink-0 mt-0.5" />
-                    ) : (
-                        <AlertTriangle size={12} className="text-red-400 shrink-0 mt-0.5" />
-                    )}
-                    <p className="text-[10px] text-red-400 line-clamp-2" title={u.error_message}>
-                        {is_copy ? 'Copyright takedown' : u.error_message}
-                    </p>
-                </div>
-            )}
-
-            {/* ── EXPAND TOGGLE ───────────────────────────────────────── */}
-            <button
+        <>
+            <tr
                 onClick={on_toggle}
-                className={`relative w-full flex items-center justify-center gap-1.5 py-2.5 border-t text-[10px] font-bold uppercase tracking-widest transition-all duration-200 ${expanded
-                    ? 'border-brand-emerald/30 text-brand-emerald bg-brand-emerald/5'
-                    : 'border-white/[0.07] text-text-muted hover:text-brand-emerald hover:bg-brand-emerald/5'
+                className={`cursor-pointer border-b transition-colors duration-150 ${expanded
+                    ? 'bg-brand-emerald/5 border-brand-emerald/20'
+                    : 'border-border-subtle hover:bg-bg-surface/40'
                 }`}
             >
-                {expanded ? <><ChevronUp size={11} /> Hide details</> : <><ChevronDown size={11} /> Show details</>}
-            </button>
-
-            {/* ── DETAIL PANEL (expandable) ───────────────────────────── */}
-            <div className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
-                <div className="min-h-0 overflow-hidden">
-                    <div className={`p-4 pt-3 border-t border-white/[0.07] transition-transform duration-300 ease-out ${expanded ? 'translate-y-0' : '-translate-y-2'}`}>
-                        <DetailPanel u={u} />
+                {/* Title */}
+                <td className="px-4 py-3 max-w-[220px]">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <span className={`shrink-0 w-7 h-7 rounded-lg flex items-center justify-center ${p_meta.bg} ${p_meta.tone}`}>
+                            {file_icon(lib?.file_name)}
+                        </span>
+                        <div className="min-w-0">
+                            <p className="text-xs font-semibold text-text-main truncate leading-snug" title={title}>{title}</p>
+                            {folder && <p className="text-[10px] text-text-muted truncate flex items-center gap-0.5"><Folder size={9} className="shrink-0" />{folder}</p>}
+                        </div>
                     </div>
-                </div>
-            </div>
-        </div>
+                    {is_copy && (
+                        <span className="mt-1 inline-flex items-center gap-1 text-[9px] text-red-400 font-bold">
+                            <ShieldAlert size={9} /> Copyright
+                        </span>
+                    )}
+                </td>
+
+                {/* Platform */}
+                <td className="px-4 py-3 whitespace-nowrap">
+                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[10px] font-bold ${p_meta.bg} ${p_meta.tone}`}>
+                        <p_meta.Icon size={10} />{p_meta.label}
+                    </span>
+                </td>
+
+                {/* OTT */}
+                <td className="px-4 py-3 max-w-[140px]">
+                    <span className="text-[11px] text-text-main truncate block">
+                        {ott ? ott.name : u.ott_id ? <span className="font-mono text-[9px] text-text-muted">{u.ott_id.slice(0, 8)}…</span> : <span className="text-text-muted italic">—</span>}
+                    </span>
+                </td>
+
+                {/* Status */}
+                <td className="px-4 py-3 whitespace-nowrap">
+                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ring-1 ${s_cfg.cls} ${u.status === 'uploading' ? 'animate-pulse' : ''}`}>
+                        {s_cfg.label}
+                    </span>
+                    {u.error_message && !is_copy && (
+                        <p className="text-[9px] text-red-400 mt-0.5 max-w-[120px] truncate" title={u.error_message}>{u.error_message}</p>
+                    )}
+                </td>
+
+                {/* Scheduled */}
+                <td className="px-4 py-3 whitespace-nowrap text-[11px] text-text-muted tabular-nums">{fmt(u.scheduledAt)}</td>
+
+                {/* Published */}
+                <td className="px-4 py-3 whitespace-nowrap text-[11px] tabular-nums">
+                    {u.publishedAt ? <span className="text-brand-emerald font-medium">{fmt(u.publishedAt)}</span> : <span className="text-text-muted">—</span>}
+                </td>
+
+                {/* Created */}
+                <td className="px-4 py-3 whitespace-nowrap text-[11px] text-text-muted tabular-nums">{fmt(u.createdAt)}</td>
+
+                {/* Actions */}
+                <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                        {u.media_url && (
+                            <a href={u.media_url} target="_blank" rel="noreferrer"
+                                onClick={e => e.stopPropagation()}
+                                className="inline-flex items-center gap-1 text-[10px] text-brand-blue hover:underline">
+                                Open <ExternalLink size={9} />
+                            </a>
+                        )}
+                        <button onClick={on_toggle} className={`text-[10px] font-bold transition-colors ${expanded ? 'text-brand-emerald' : 'text-text-muted hover:text-brand-emerald'}`}>
+                            {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                        </button>
+                    </div>
+                </td>
+            </tr>
+
+            {/* Expandable detail row */}
+            {expanded && (
+                <tr className="border-b border-brand-emerald/20 bg-brand-emerald/[0.03]">
+                    <td colSpan={8} className="px-4 py-4">
+                        <DetailPanel u={u} />
+                    </td>
+                </tr>
+            )}
+        </>
     );
 };
 
-// ── UploadSkeleton ─────────────────────────────────────────────────────
+// ── UploadRowSkeleton ──────────────────────────────────────────────────
 
-const UploadSkeleton: React.FC = () => (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-xl overflow-hidden animate-pulse">
-        <div className="p-4 pb-3 flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-bg-surface/60" />
-            <div className="flex-1 space-y-2">
-                <div className="h-3.5 bg-bg-surface/60 rounded-full w-3/4" />
-                <div className="h-2.5 bg-bg-surface/40 rounded-full w-1/2" />
-            </div>
-            <div className="h-4 w-16 bg-bg-surface/60 rounded-full" />
-        </div>
-        <div className="px-4 pb-3 space-y-2">
-            <div className="h-6 bg-bg-surface/40 rounded-lg w-24" />
-            <div className="h-2.5 bg-bg-surface/30 rounded-full w-2/3" />
-            <div className="h-2.5 bg-bg-surface/30 rounded-full w-1/2" />
-        </div>
-        <div className="border-t border-white/[0.07] mx-4" />
-        <div className="px-4 py-3 grid grid-cols-2 gap-2">
-            <div className="h-2 bg-bg-surface/30 rounded-full" />
-            <div className="h-2 bg-bg-surface/30 rounded-full" />
-            <div className="h-2 bg-bg-surface/30 rounded-full" />
-            <div className="h-2 bg-bg-surface/30 rounded-full" />
-        </div>
-        <div className="border-t border-white/[0.07] h-9" />
-    </div>
+const UploadRowSkeleton: React.FC = () => (
+    <tr className="border-b border-border-subtle animate-pulse">
+        <td className="px-4 py-3"><div className="flex items-center gap-2"><div className="w-7 h-7 rounded-lg bg-bg-surface/60 shrink-0" /><div className="space-y-1.5 flex-1"><div className="h-2.5 bg-bg-surface/60 rounded-full w-3/4" /><div className="h-2 bg-bg-surface/40 rounded-full w-1/2" /></div></div></td>
+        <td className="px-4 py-3"><div className="h-5 w-16 bg-bg-surface/40 rounded-lg" /></td>
+        <td className="px-4 py-3"><div className="h-2.5 bg-bg-surface/40 rounded-full w-20" /></td>
+        <td className="px-4 py-3"><div className="h-4 w-14 bg-bg-surface/40 rounded-full" /></td>
+        <td className="px-4 py-3"><div className="h-2.5 bg-bg-surface/30 rounded-full w-16" /></td>
+        <td className="px-4 py-3"><div className="h-2.5 bg-bg-surface/30 rounded-full w-16" /></td>
+        <td className="px-4 py-3"><div className="h-2.5 bg-bg-surface/30 rounded-full w-16" /></td>
+        <td className="px-4 py-3"><div className="h-4 w-8 bg-bg-surface/30 rounded" /></td>
+    </tr>
 );
 
 // ── Sub-components (preserved from original) ───────────────────────────
