@@ -781,20 +781,30 @@ const OttManagePage: React.FC = () => {
     }
   };
 
+  const mark_card_done = (state_key: string) => {
+    setCardDownloadState(prev => {
+      const next = new Map(prev).set(state_key, 'done');
+      if (ls_key) {
+        try {
+          localStorage.setItem(ls_key, JSON.stringify(
+            [...next.entries()].filter(([, v]) => v === 'done').map(([k]) => k),
+          ));
+        } catch { /* quota — ignore */ }
+      }
+      return next;
+    });
+  };
+
   const handle_download_card = async ({
     card,
     parent_api_id,
     default_child_api_id,
     actions,
-    source_response_id,
-    parent_item_key,
   }: {
     card: BuiltCard;
     parent_api_id: string;
     default_child_api_id?: string | null;
     actions: CardAction[];
-    source_response_id?: string | null;
-    parent_item_key?: string | null;
   }) => {
     if (!ott_id) return;
 
@@ -812,63 +822,51 @@ const OttManagePage: React.FC = () => {
     setCardDownloadState(prev => new Map(prev).set(state_key, 'downloading'));
 
     try {
-      await ott_service.call_child_api_from_card({
+      // Step 1: Fetch all episodes for this card and store the response.
+      const child_res = await ott_service.call_child_api_from_card({
         ott_id,
         child_api_id,
         parent_api_id,
         card_index: card.index,
         item_key: card.item_key,
-        parent_item_key: parent_item_key ?? undefined,
-        source_response_id: source_response_id ?? undefined,
         fetch_all_pages: true,
       });
 
-      await ott_service.auto_capture(ott_id);
-
-      const assets: VideoAsset[] = [];
-      let pg = 1;
-      while (true) {
-        const r = await ott_service.get_video_assets(ott_id, { limit: 200, page: pg });
-        if (!r.success || !r.data) throw new Error(r.message || 'Failed to load video assets');
-        assets.push(...r.data.items.filter(a =>
-          ['mp4', 'webm', 'mov', 'mkv', 'ts'].includes(a.video_type ?? '') && !a.downloaded_at,
-        ));
-        if (assets.length >= r.data.total || r.data.items.length < 200) break;
-        pg += 1;
+      if (!child_res.success || !child_res.data) {
+        throw new Error(child_res.message || 'Failed to fetch episodes');
       }
 
-      const mark_done = (key: string) => {
-        setCardDownloadState(prev => {
-          const next = new Map(prev).set(key, 'done');
-          if (ls_key) {
-            try {
-              localStorage.setItem(ls_key, JSON.stringify([...next.entries()].filter(([, v]) => v === 'done').map(([k]) => k)));
-            } catch { /* quota — ignore */ }
-          }
-          return next;
-        });
-      };
-
-      if (assets.length === 0) {
-        toast('All episodes already downloaded.');
-        mark_done(state_key);
+      const episode_cards: any[] = child_res.data.cards?.cards ?? [];
+      if (episode_cards.length === 0) {
+        toast.error('No episodes found for this card');
+        setCardDownloadState(prev => new Map(prev).set(state_key, 'idle'));
         return;
       }
 
-      for (let i = 0; i < assets.length; i++) {
-        const url = ott_service.get_video_download_url(ott_id, assets[i].id);
-        const a_el = document.createElement('a');
-        a_el.href = url;
-        a_el.download = '';
-        a_el.style.display = 'none';
-        document.body.appendChild(a_el);
-        a_el.click();
-        document.body.removeChild(a_el);
-        await new Promise<void>(resolve => setTimeout(resolve, 600));
+      // Step 2: Save all episode cards to library via save_from_cards
+      // (uses the child API node's capture_mapping to extract video URLs).
+      const card_title = card.fields.find(f => f.display_type === 'title')?.value;
+      const card_indices = episode_cards.map((_: any, i: number) => i);
+      const save_res = await ott_service.save_cards_to_library(ott_id, {
+        api_node_id: child_api_id,
+        card_indices,
+        source_response_id: child_res.data.response_id ?? undefined,
+        parent_item_key: card.item_key,
+        parent_title: card_title != null ? String(card_title) : null,
+        parent_api_id,
+      });
+
+      if (!save_res.success) {
+        throw new Error(save_res.message || 'Failed to save episodes to library');
       }
 
-      toast.success(`Downloading ${assets.length} episode${assets.length === 1 ? '' : 's'}`);
-      mark_done(state_key);
+      const { started = 0, already = 0, total = episode_cards.length } = save_res.data ?? {};
+      if (started === 0 && already > 0) {
+        toast(`All ${total} episodes already saved to library.`);
+      } else {
+        toast.success(`Saving ${started} episode${started === 1 ? '' : 's'} to library`);
+      }
+      mark_card_done(state_key);
     } catch (err: any) {
       toast.error(err?.message || 'Download failed');
       setCardDownloadState(prev => new Map(prev).set(state_key, 'idle'));
