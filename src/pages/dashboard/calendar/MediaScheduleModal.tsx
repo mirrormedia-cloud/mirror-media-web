@@ -176,6 +176,9 @@ const MediaScheduleModal: React.FC<Props> = ({ isOpen, onClose, onSaved }) => {
     // first row reflects the moment the user opened the modal.
     const [upload_times, set_upload_times] = useState<string[]>([current_time_hhmm()]);
 
+    // ── Upload-all-at-once mode ─────────────────────────────────────────
+    const [upload_all_at_once, set_upload_all_at_once] = useState(false);
+
     // ── Flow state ──────────────────────────────────────────────────────
     const [stage, set_stage] = useState<'form' | 'preview'>('form');
     // Auto Details — when on, missing per-platform fields are filled by
@@ -206,6 +209,7 @@ const MediaScheduleModal: React.FC<Props> = ({ isOpen, onClose, onSaved }) => {
         set_color('random');
         set_custom_color('#10B981');
         set_upload_times([current_time_hhmm()]);
+        set_upload_all_at_once(false);
         set_stage('form');
         set_preview_items(null);
         set_preview_warnings([]);
@@ -244,8 +248,8 @@ const MediaScheduleModal: React.FC<Props> = ({ isOpen, onClose, onSaved }) => {
     const selected_range_days = is_custom_range && start_date && end_date
         ? days_between_inclusive(start_date, end_date)
         : 0;
-    const range_too_short = is_custom_range && total_picked > 0 && selected_range_days > 0 && selected_range_days < required_days;
-    const range_too_long = is_custom_range && total_picked > 0 && selected_range_days > required_days;
+    const range_too_short = !upload_all_at_once && is_custom_range && total_picked > 0 && selected_range_days > 0 && selected_range_days < required_days;
+    const range_too_long = !upload_all_at_once && is_custom_range && total_picked > 0 && selected_range_days > required_days;
 
     // Source folder, recorded into batch metadata so the schedules detail
     // page can show "Story Folder: …". When picks span multiple folders we
@@ -324,6 +328,11 @@ const MediaScheduleModal: React.FC<Props> = ({ isOpen, onClose, onSaved }) => {
     const validate = (): string | null => {
         if (file_count === 0 && local_files.length === 0) {
             return 'Pick at least one file (Library or PC)';
+        }
+        if (upload_all_at_once) {
+            const t = upload_times[0] ?? '';
+            if (!/^([01]\d|2[0-3]):([0-5]\d)$/.test(t)) return 'Upload time must be HH:MM (24h)';
+            return null;
         }
         if (upload_count < 1) return 'Upload count must be at least 1';
         if (upload_times.some(t => !/^([01]\d|2[0-3]):([0-5]\d)$/.test(t))) return 'Upload times must be HH:MM (24h)';
@@ -458,26 +467,50 @@ const MediaScheduleModal: React.FC<Props> = ({ isOpen, onClose, onSaved }) => {
     const build_payload = (): SchedulePayload | null => {
         if (!locked_ott_id) return null;
         const platforms = expand_platform(platform_choice);
-        // Always compute concrete start + end dates regardless of mode so
-        // the backend (and downstream cron in Scenario 2) sees a closed
-        // window. In every-day mode start = today; in custom-range mode
-        // start = whatever the user picked. End = start + required − 1.
-        const effective_start_date = is_custom_range ? start_date : date_input(new Date());
-        const effective_end_date = effective_start_date && required_days > 0
-            ? add_days(effective_start_date, required_days - 1)
-            : null;
+
+        let eff_frequency: ScheduleFrequency;
+        let eff_release_count: number;
+        let eff_upload_times: string[];
+        let eff_start_date: string;
+        let eff_end_date: string | null;
+        let eff_weekdays: number[];
+        let eff_month_days: number[];
+
+        if (upload_all_at_once) {
+            const single_time = upload_times[0] || current_time_hhmm();
+            const n = Math.max(1, total_picked);
+            eff_frequency = 'every_day';
+            eff_release_count = n;
+            eff_upload_times = Array.from({ length: n }, () => local_hhmm_to_utc(single_time));
+            eff_start_date = start_date || date_input(new Date());
+            eff_end_date = eff_start_date;
+            eff_weekdays = [];
+            eff_month_days = [];
+        } else {
+            const effective_start = is_custom_range ? start_date : date_input(new Date());
+            eff_frequency = frequency;
+            eff_release_count = upload_count;
+            eff_upload_times = upload_times.map(local_hhmm_to_utc);
+            eff_start_date = effective_start;
+            eff_end_date = effective_start && required_days > 0
+                ? add_days(effective_start, required_days - 1)
+                : null;
+            eff_weekdays = frequency === 'every_week' ? weekdays : [];
+            eff_month_days = frequency === 'every_month' ? month_days : [];
+        }
+
         return {
             ott_id: locked_ott_id,
             library_item_ids: library_files.map(f => f.id),
             scheduled: true,
             platforms,
-            frequency,
-            release_count: upload_count,
-            upload_times: upload_times.map(local_hhmm_to_utc),
-            start_date: effective_start_date,
-            end_date: effective_end_date,
-            weekdays: frequency === 'every_week' ? weekdays : [],
-            month_days: frequency === 'every_month' ? month_days : [],
+            frequency: eff_frequency,
+            release_count: eff_release_count,
+            upload_times: eff_upload_times,
+            start_date: eff_start_date,
+            end_date: eff_end_date,
+            weekdays: eff_weekdays,
+            month_days: eff_month_days,
             color: effective_color,
             name: source_folder?.parent_title
                 ? `Media: ${source_folder.parent_title}`
@@ -490,6 +523,7 @@ const MediaScheduleModal: React.FC<Props> = ({ isOpen, onClose, onSaved }) => {
                 parent_title: source_folder?.parent_title ?? null,
                 file_count,
                 required_days,
+                upload_all_at_once,
                 local_files_skipped: local_files.length,
             },
             auto_details,
@@ -734,7 +768,49 @@ const MediaScheduleModal: React.FC<Props> = ({ isOpen, onClose, onSaved }) => {
                                 )}
                             </section>
 
+                            {/* Upload all at once toggle */}
+                            <section>
+                                <label className="flex items-center gap-3 p-3 rounded-2xl border border-border-subtle bg-bg-surface cursor-pointer hover:border-brand-blue/40 transition-colors select-none">
+                                    <input
+                                        type="checkbox"
+                                        checked={upload_all_at_once}
+                                        onChange={(e) => set_upload_all_at_once(e.target.checked)}
+                                        className="accent-brand-emerald w-4 h-4 shrink-0"
+                                    />
+                                    <span className="flex-1 min-w-0">
+                                        <span className="text-xs font-bold text-text-main">Upload all at once</span>
+                                        <span className="block text-[11px] text-text-muted mt-0.5">
+                                            Schedule all {total_picked || 'selected'} file{total_picked === 1 ? '' : 's'} at the same date &amp; time — hides frequency and count settings
+                                        </span>
+                                    </span>
+                                </label>
+                            </section>
+
+                            {/* Upload date + time — shown only in "all at once" mode */}
+                            {upload_all_at_once && (
+                                <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div className="space-y-2">
+                                        <label className="text-[11px] uppercase font-bold text-text-muted tracking-wider">Upload date</label>
+                                        <ThemedDatePicker
+                                            value={start_date}
+                                            onChange={set_start_date}
+                                            min={date_input(new Date())}
+                                            placeholder="DD-MM-YYYY"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[11px] uppercase font-bold text-text-muted tracking-wider">Upload time</label>
+                                        <ThemedTimePicker
+                                            value={upload_times[0] ?? current_time_hhmm()}
+                                            onChange={(v) => set_upload_times([v])}
+                                            minute_step={1}
+                                        />
+                                    </div>
+                                </section>
+                            )}
+
                             {/* Frequency */}
+                            {!upload_all_at_once && (
                             <section className="space-y-3">
                                 <div className="space-y-2">
                                     <label className="text-[11px] uppercase font-bold text-text-muted tracking-wider">
@@ -834,9 +910,11 @@ const MediaScheduleModal: React.FC<Props> = ({ isOpen, onClose, onSaved }) => {
                                     </div>
                                 )}
                             </section>
+                            )}
 
                             {/* Knobs row */}
-                            <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <section className={`grid grid-cols-1 gap-3 ${upload_all_at_once ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
+                                {!upload_all_at_once && (
                                 <div className="space-y-2">
                                     <label className="text-[11px] uppercase font-bold text-text-muted tracking-wider">Upload count / day</label>
                                     <div className="flex items-center gap-2">
@@ -864,6 +942,7 @@ const MediaScheduleModal: React.FC<Props> = ({ isOpen, onClose, onSaved }) => {
                                         </button>
                                     </div>
                                 </div>
+                                )}
                                 <div className="space-y-2">
                                     <label className="text-[11px] uppercase font-bold text-text-muted tracking-wider">Platform</label>
                                     <CommonSearchSelect
@@ -935,6 +1014,7 @@ const MediaScheduleModal: React.FC<Props> = ({ isOpen, onClose, onSaved }) => {
                             </section>
 
                             {/* Schedule times */}
+                            {!upload_all_at_once && (
                             <section className="space-y-2">
                                 <label className="text-[11px] uppercase font-bold text-text-muted tracking-wider">
                                     Schedule times · {upload_count} per day
@@ -954,6 +1034,7 @@ const MediaScheduleModal: React.FC<Props> = ({ isOpen, onClose, onSaved }) => {
                                     ))}
                                 </div>
                             </section>
+                            )}
 
                             {/* Auto Details — Gemini fills missing fields per platform at fire time. */}
                             <section className="rounded-2xl border border-border-subtle bg-bg-surface/40 p-3 space-y-2">
@@ -1026,10 +1107,14 @@ const MediaScheduleModal: React.FC<Props> = ({ isOpen, onClose, onSaved }) => {
                                     <p className="text-xs leading-relaxed">
                                         <span className="font-bold">{total_picked}</span> file{total_picked === 1 ? '' : 's'}
                                         {local_files.length > 0 ? ` (${file_count} library + ${local_files.length} local)` : ''} ·
-                                        {' '}<span className="font-bold">{upload_count}</span> upload{upload_count === 1 ? '' : 's'}/day ·
-                                        {' '}<span className="font-bold">{required_days}</span> day{required_days === 1 ? '' : 's'} required
-                                        {is_custom_range && start_date && end_date && (
-                                            <> · selected <span className="font-bold">{selected_range_days}</span> day{selected_range_days === 1 ? '' : 's'}</>
+                                        {upload_all_at_once ? (
+                                            <> <span className="font-bold text-brand-emerald">all at once</span> · 1 day</>
+                                        ) : (
+                                            <>{' '}<span className="font-bold">{upload_count}</span> upload{upload_count === 1 ? '' : 's'}/day ·
+                                            {' '}<span className="font-bold">{required_days}</span> day{required_days === 1 ? '' : 's'} required
+                                            {is_custom_range && start_date && end_date && (
+                                                <> · selected <span className="font-bold">{selected_range_days}</span> day{selected_range_days === 1 ? '' : 's'}</>
+                                            )}</>
                                         )}
                                     </p>
                                     {range_too_short && (
