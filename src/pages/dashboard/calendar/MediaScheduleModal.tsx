@@ -527,12 +527,12 @@ const MediaScheduleModal: React.FC<Props> = ({ isOpen, onClose, onSaved }) => {
                 local_files_skipped: local_files.length,
             },
             auto_details,
-            manual_details: auto_details ? {
+            manual_details: (auto_details || manual_title.trim()) ? {
                 ...(manual_title.trim() ? { title: manual_title.trim() } : {}),
-                ...(manual_description.trim() ? { description: manual_description.trim() } : {}),
-                ...(manual_caption.trim() ? { caption: manual_caption.trim() } : {}),
-                ...(manual_tags_csv.trim() ? { tags: manual_tags_csv.split(',').map(t => t.trim()).filter(Boolean) } : {}),
-                ...(manual_hashtags_csv.trim() ? { hashtags: manual_hashtags_csv.split(',').map(t => t.trim()).filter(Boolean) } : {}),
+                ...(auto_details && manual_description.trim() ? { description: manual_description.trim() } : {}),
+                ...(auto_details && manual_caption.trim() ? { caption: manual_caption.trim() } : {}),
+                ...(auto_details && manual_tags_csv.trim() ? { tags: manual_tags_csv.split(',').map(t => t.trim()).filter(Boolean) } : {}),
+                ...(auto_details && manual_hashtags_csv.trim() ? { hashtags: manual_hashtags_csv.split(',').map(t => t.trim()).filter(Boolean) } : {}),
             } : undefined,
         };
     };
@@ -1036,6 +1036,18 @@ const MediaScheduleModal: React.FC<Props> = ({ isOpen, onClose, onSaved }) => {
                             </section>
                             )}
 
+                            {/* Default title — always visible */}
+                            <div className="space-y-1.5">
+                                <label className="text-[11px] uppercase font-bold text-text-muted tracking-wider">Title (optional)</label>
+                                <input
+                                    type="text"
+                                    value={manual_title}
+                                    onChange={(e) => set_manual_title(e.target.value)}
+                                    placeholder="Default title for all uploads — supports ${number}, ${count}"
+                                    className="input-field text-xs w-full"
+                                />
+                            </div>
+
                             {/* Auto Details — Gemini fills missing fields per platform at fire time. */}
                             <section className="rounded-2xl border border-border-subtle bg-bg-surface/40 p-3 space-y-2">
                                 <label className="flex items-start gap-3 cursor-pointer select-none">
@@ -1050,19 +1062,12 @@ const MediaScheduleModal: React.FC<Props> = ({ isOpen, onClose, onSaved }) => {
                                             Auto Details from Google Analysis
                                         </span>
                                         <span className="block text-[11px] text-text-muted mt-0.5 leading-relaxed">
-                                            If enabled, missing title, description, caption, tags and hashtags will be generated automatically per platform at upload time. Manually filled fields below will not be overwritten.
+                                            If enabled, missing description, caption, tags and hashtags will be generated automatically per platform at upload time. The title above and manually filled fields will not be overwritten.
                                         </span>
                                     </span>
                                 </label>
                                 {auto_details && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
-                                        <input
-                                            type="text"
-                                            value={manual_title}
-                                            onChange={(e) => set_manual_title(e.target.value)}
-                                            placeholder="Manual title (optional)  number/count"
-                                            className="input-field text-xs"
-                                        />
                                         <input
                                             type="text"
                                             value={manual_caption}
