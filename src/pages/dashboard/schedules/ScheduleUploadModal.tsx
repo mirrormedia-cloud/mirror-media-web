@@ -64,6 +64,15 @@ function date_input(d: Date): string {
     return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
+// Convert "HH:MM" in the browser's local timezone to "HH:MM" in UTC so the
+// backend (which always stores times as UTC) records the exact wall-clock hour
+// the user intended, regardless of the server's own timezone.
+function local_hhmm_to_utc(hhmm: string): string {
+    const [h, m] = hhmm.split(':').map(Number);
+    const ref = new Date(2000, 0, 1, h!, m!, 0, 0); // local time on a DST-neutral date
+    return `${pad2(ref.getUTCHours())}:${pad2(ref.getUTCMinutes())}`;
+}
+
 function format_iso_local(iso: string | null): string {
     if (!iso) return '—';
     const d = new Date(iso);
@@ -189,7 +198,7 @@ const ScheduleUploadModal: React.FC<Props> = ({ isOpen, onClose, initial_items, 
         platforms,
         frequency: scheduled ? frequency : null,
         release_count,
-        upload_times: scheduled ? upload_times : [],
+        upload_times: scheduled ? upload_times.map(local_hhmm_to_utc) : [],
         start_date: scheduled ? start_date : null,
         end_date: scheduled && (frequency === 'custom_range' || end_date) ? (end_date || null) : null,
         weekdays: scheduled && frequency === 'every_week' ? weekdays : [],

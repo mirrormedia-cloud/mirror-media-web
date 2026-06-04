@@ -83,6 +83,13 @@ const SWATCH_HEX: Record<string, string> = {
 
 function pad2(n: number) { return String(n).padStart(2, '0'); }
 
+// Convert "HH:MM" in the browser's local timezone to "HH:MM" in UTC for storage.
+function local_hhmm_to_utc(hhmm: string): string {
+    const [h, m] = hhmm.split(':').map(Number);
+    const ref = new Date(2000, 0, 1, h!, m!, 0, 0);
+    return `${pad2(ref.getUTCHours())}:${pad2(ref.getUTCMinutes())}`;
+}
+
 /** "HH:MM" for right now (24-hour clock). Default for the time picker so
  *  the first slot is the current moment, not a hard-coded 10:00. */
 function current_time_hhmm(): string {
@@ -452,7 +459,7 @@ const MediaScheduleModal: React.FC<Props> = ({ isOpen, onClose, onSaved }) => {
             platforms,
             frequency,
             release_count: upload_count,
-            upload_times,
+            upload_times: upload_times.map(local_hhmm_to_utc),
             start_date: effective_start_date,
             end_date: effective_end_date,
             weekdays: frequency === 'every_week' ? weekdays : [],

@@ -71,6 +71,20 @@ function date_input(d: Date): string {
     return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
+// Convert "HH:MM" in UTC to "HH:MM" in the browser's local timezone for display.
+function utc_hhmm_to_local(hhmm: string): string {
+    const [h, m] = hhmm.split(':').map(Number);
+    const ref = new Date(Date.UTC(2000, 0, 1, h!, m!, 0, 0));
+    return `${pad2(ref.getHours())}:${pad2(ref.getMinutes())}`;
+}
+
+// Convert "HH:MM" in the browser's local timezone to "HH:MM" in UTC for storage.
+function local_hhmm_to_utc(hhmm: string): string {
+    const [h, m] = hhmm.split(':').map(Number);
+    const ref = new Date(2000, 0, 1, h!, m!, 0, 0);
+    return `${pad2(ref.getUTCHours())}:${pad2(ref.getUTCMinutes())}`;
+}
+
 function add_days(date_str: string, days: number): string {
     const [y, m, d] = date_str.split('-').map(Number);
     const dt = new Date(y!, (m! || 1) - 1, (d! || 1) + days);
@@ -122,7 +136,7 @@ const EditDraftModal: React.FC<Props> = ({ isOpen, onClose, batch, items, onSave
         set_frequency((batch.frequency ?? 'every_day') as ScheduleFrequency);
         set_release_count(Math.max(1, batch.release_count ?? 1));
         const times = batch.upload_times && batch.upload_times.length > 0
-            ? batch.upload_times
+            ? batch.upload_times.map(utc_hhmm_to_local)
             : ['10:00'];
         set_upload_times(times);
         set_start_date(batch.start_date ?? date_input(new Date()));
@@ -222,7 +236,7 @@ const EditDraftModal: React.FC<Props> = ({ isOpen, onClose, batch, items, onSave
             platforms,
             frequency: scheduled ? frequency : null,
             release_count,
-            upload_times: scheduled ? upload_times : [],
+            upload_times: scheduled ? upload_times.map(local_hhmm_to_utc) : [],
             start_date: effective_start,
             end_date: effective_end,
             weekdays: scheduled && frequency === 'every_week' ? weekdays : [],

@@ -451,7 +451,7 @@ const UploadRow: React.FC<{
     const title   = lib?.file_name || lib?.title || u.title || '(untitled)';
     const folder  = lib?.parent_title ?? null;
 
-    const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' }) : '—';
+    const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 
     return (
         <>
