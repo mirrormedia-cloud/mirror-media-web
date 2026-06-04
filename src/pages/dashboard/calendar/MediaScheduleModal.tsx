@@ -55,6 +55,20 @@ const PLATFORM_OPTIONS: SearchSelectOption[] = [
     { label: 'Instagram', value: 'instagram' },
 ];
 
+function handle_platform_multi_change(
+    prev: PlatformChoice[],
+    next: string[],
+): PlatformChoice[] {
+    if (next.length === 0) return ['all'];
+    const had_all = prev.includes('all');
+    const has_all = next.includes('all');
+    // User clicked "All" — collapse to just "all"
+    if (!had_all && has_all) return ['all'];
+    // "All" was selected and user picked a specific platform — drop "all"
+    if (had_all && has_all && next.length > 1) return next.filter(v => v !== 'all') as PlatformChoice[];
+    return next as PlatformChoice[];
+}
+
 const COLOR_OPTIONS: SearchSelectOption[] = [
     { label: 'Random', value: 'random' },
     { label: 'Custom…', value: 'custom' },
@@ -117,9 +131,9 @@ function days_between_inclusive(start: string, end: string): number {
     return Math.floor(ms / 86_400_000) + 1;
 }
 
-function expand_platform(p: PlatformChoice): SupportedPlatform[] {
-    if (p === 'all') return ['youtube', 'facebook', 'instagram'];
-    return [p];
+function expand_platform(p: PlatformChoice[]): SupportedPlatform[] {
+    if (p.includes('all')) return ['youtube', 'facebook', 'instagram'];
+    return p as SupportedPlatform[];
 }
 
 const MediaScheduleModal: React.FC<Props> = ({ isOpen, onClose, onSaved }) => {
@@ -155,7 +169,7 @@ const MediaScheduleModal: React.FC<Props> = ({ isOpen, onClose, onSaved }) => {
     const [upload_count, set_upload_count] = useState(1);
     const [start_date, set_start_date] = useState(date_input(new Date()));
     const [end_date, set_end_date] = useState('');
-    const [platform_choice, set_platform_choice] = useState<PlatformChoice>('all');
+    const [platform_choice, set_platform_choice] = useState<PlatformChoice[]>(['all']);
     const [color, set_color] = useState('random');
     const [custom_color, set_custom_color] = useState('#10B981');
     // Default to "now" — picker offers every-minute resolution, so the
@@ -188,7 +202,7 @@ const MediaScheduleModal: React.FC<Props> = ({ isOpen, onClose, onSaved }) => {
         set_upload_count(1);
         set_start_date(date_input(new Date()));
         set_end_date('');
-        set_platform_choice('all');
+        set_platform_choice(['all']);
         set_color('random');
         set_custom_color('#10B981');
         set_upload_times([current_time_hhmm()]);
@@ -853,9 +867,10 @@ const MediaScheduleModal: React.FC<Props> = ({ isOpen, onClose, onSaved }) => {
                                 <div className="space-y-2">
                                     <label className="text-[11px] uppercase font-bold text-text-muted tracking-wider">Platform</label>
                                     <CommonSearchSelect
+                                        is_multi
                                         options={PLATFORM_OPTIONS}
                                         value={platform_choice}
-                                        on_change={(v) => set_platform_choice((v || 'all') as PlatformChoice)}
+                                        on_change={(v) => set_platform_choice(prev => handle_platform_multi_change(prev, v))}
                                     />
                                 </div>
                                 <div className="space-y-2">
