@@ -49,7 +49,7 @@ interface Props {
 type PlatformChoice = 'youtube' | 'facebook' | 'instagram' | 'all';
 
 const PLATFORM_OPTIONS: SearchSelectOption[] = [
-    { label: 'All (YouTube + Facebook + Instagram)', value: 'all' },
+    { label: 'All', value: 'all' },
     { label: 'YouTube', value: 'youtube' },
     { label: 'Facebook', value: 'facebook' },
     { label: 'Instagram', value: 'instagram' },
