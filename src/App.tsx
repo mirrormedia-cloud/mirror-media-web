@@ -32,6 +32,8 @@ import SocialUploadsPage from './pages/dashboard/social/SocialUploadsPage';
 import AnalyticsPage from './pages/dashboard/analytics/AnalyticsPage';
 import NotificationsPage from './pages/dashboard/notifications/NotificationsPage';
 import ProfilePage from './pages/dashboard/profile/ProfilePage';
+import AutomationPage from './pages/dashboard/automation/AutomationPage';
+import AutomationBuilderPage from './pages/dashboard/automation/AutomationBuilderPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { get_profile } from './services/profile_service';
 import { RequireAuth } from './components/auth/RequireAuth';
@@ -154,6 +156,11 @@ export default function App() {
           {/* Social media accounts (YouTube / Facebook / Instagram) */}
           <Route path="social-accounts" element={<SocialMediaPage />} />
           <Route path="media-upload" element={<SocialUploadsPage />} />
+
+          {/* Automation (keyword-based comment → DM rules) */}
+          <Route path="automation" element={<AutomationPage />} />
+          <Route path="automation/new" element={<AutomationBuilderPage />} />
+          <Route path="automation/:id/edit" element={<AutomationBuilderPage />} />
 
           {/* Notifications */}
           <Route path="notifications" element={<NotificationsPage />} />

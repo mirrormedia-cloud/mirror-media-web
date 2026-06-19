@@ -18,6 +18,7 @@ import {
   Activity,
   UploadCloud,
   Bell,
+  Zap,
 } from 'lucide-react';
 import { fetch_unread_count } from '../../services/notification_service';
 import { useAuth } from '../../context/AuthContext';
@@ -230,6 +231,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
     { icon: UploadCloud, label: 'Media Upload', path: '/dashboard/media-upload' },
     { icon: BarChart3, label: 'Analytics', path: '/dashboard/analytics' },
     { icon: Activity, label: 'Crons', path: '/dashboard/crons' },
+    { icon: Zap, label: 'Automation', path: '/dashboard/automation' },
   ];
 
   useEffect(() => {
