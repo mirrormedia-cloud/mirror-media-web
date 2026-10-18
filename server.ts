@@ -14,6 +14,13 @@ async function start_server() {
   // The OTT external proxy lives in the Node.ts backend at /api/ott.
   // The frontend calls it directly via VITE_API_BASE_URL — no proxy needed here.
 
+  // TikTok domain verification — must be reachable at /tiktok
+  app.get("/tiktok", (_req, res) => {
+    res.sendFile(
+      path.join(process.cwd(), "public", "tiktokimlSPg15x5bkk4K4lvm1UfurUig2el28.txt")
+    );
+  });
+
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },

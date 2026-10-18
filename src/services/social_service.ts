@@ -5,7 +5,7 @@
 
 import { api_client, normalize_envelope, ServiceEnvelope } from "@/lib/api_client";
 
-export type SocialPlatform = "youtube" | "facebook" | "instagram";
+export type SocialPlatform = "youtube" | "facebook" | "instagram" | "tiktok";
 
 export interface SocialAccount {
     id: string;
@@ -85,7 +85,7 @@ export const social_service = {
     async get_upload_stats(params: { platform?: SocialPlatform; status?: string } = {}): Promise<ServiceEnvelope<{
         total: number;
         by_status: Record<'draft' | 'scheduled' | 'uploading' | 'uploaded' | 'failed' | 'cancelled', number>;
-        by_platform: Record<'youtube' | 'facebook' | 'instagram', number>;
+        by_platform: Record<'youtube' | 'facebook' | 'instagram' | 'tiktok', number>;
     }>> {
         const res = await api_client.get(`/api/social/uploads/stats`, { params });
         return normalize_envelope(res.data);

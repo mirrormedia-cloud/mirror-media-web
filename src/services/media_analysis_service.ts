@@ -5,7 +5,7 @@
 
 import { api_client, normalize_envelope, ServiceEnvelope } from "@/lib/api_client";
 
-export type AnalysisPlatform = "youtube" | "facebook" | "instagram" | "general";
+export type AnalysisPlatform = "youtube" | "facebook" | "instagram" | "tiktok" | "general";
 export type AnalysisStatus = "pending" | "completed" | "failed";
 
 export interface ManualOverrides {
