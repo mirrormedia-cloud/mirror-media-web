@@ -94,7 +94,7 @@ export default function App() {
       <AuthProvider>
         <ConfirmProvider>
         <Routes>
-          {/* Auth Routes — public */}
+          {/* Public routes — no auth required, never redirect to /login */}
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify-otp" element={<VerifyOTP />} />
@@ -167,16 +167,6 @@ export default function App() {
           {/* Profile */}
           <Route path="profile" element={<ProfilePage />} />
         </Route>
-
-          {/* TikTok domain verification — public, no auth */}
-          <Route
-            path="/tiktok"
-            element={
-              <pre style={{ margin: 0, fontFamily: "monospace" }}>
-                tiktok-developers-site-verification=imlSPg15x5bkk4K4lvm1UfurUig2el28
-              </pre>
-            }
-          />
 
           {/* Fallback */}
           <Route path="/" element={<Navigate to="/login" replace />} />
