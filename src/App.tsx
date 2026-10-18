@@ -168,6 +168,16 @@ export default function App() {
           <Route path="profile" element={<ProfilePage />} />
         </Route>
 
+          {/* TikTok domain verification — public, no auth */}
+          <Route
+            path="/tiktok"
+            element={
+              <pre style={{ margin: 0, fontFamily: "monospace" }}>
+                tiktok-developers-site-verification=imlSPg15x5bkk4K4lvm1UfurUig2el28
+              </pre>
+            }
+          />
+
           {/* Fallback */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
