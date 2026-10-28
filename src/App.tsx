@@ -11,6 +11,8 @@ import ForgotPassword from './pages/auth/ForgotPassword';
 import VerifyOTP from './pages/auth/VerifyOTP';
 import ResetPassword from './pages/auth/ResetPassword';
 import CompleteProfile from './pages/auth/CompleteProfile';
+import PrivacyPolicy from './pages/auth/PrivacyPolicy';
+import TermsPolicy from './pages/auth/TermsPolicy';
 import { DashboardLayout } from './pages/dashboard/DashboardLayout';
 import { Overview } from './pages/dashboard/Overview';
 import RegisterOTT from './pages/dashboard/ott/RegisterOTT';
@@ -100,6 +102,8 @@ export default function App() {
           <Route path="/verify-otp" element={<VerifyOTP />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/complete-profile" element={<CompleteProfile />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-policy" element={<TermsPolicy />} />
 
           {/* Dashboard Routes — protected. RequireAuth holds rendering during
               the boot /me check, then redirects unauthenticated users to /login. */}

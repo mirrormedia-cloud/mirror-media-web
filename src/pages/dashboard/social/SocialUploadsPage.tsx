@@ -46,6 +46,12 @@ import {
     Music,
     ChevronUp,
 } from 'lucide-react';
+
+const TikTokIcon: React.FC<{ size?: number; className?: string }> = ({ size = 24, className }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
+        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z" />
+    </svg>
+);
 import toast from 'react-hot-toast';
 import { social_service, SocialPlatform, SocialUploadRow } from '../../../services/social_service';
 import { ThemedDatePicker } from '../../../components/ui/ThemedDatePicker';
@@ -55,9 +61,10 @@ import { OttPlatformSummary } from '../../../types';
 // ── Constants ─────────────────────────────────────────────────────────
 
 const PLATFORM_META: Record<SocialPlatform, { label: string; Icon: React.ComponentType<{ size?: number; className?: string }>; tone: string; bg: string }> = {
-    youtube: { label: 'YouTube', Icon: Youtube, tone: 'text-red-500', bg: 'bg-red-500/10' },
-    facebook: { label: 'Facebook', Icon: Facebook, tone: 'text-blue-500', bg: 'bg-blue-500/10' },
-    instagram: { label: 'Instagram', Icon: Instagram, tone: 'text-purple-500', bg: 'bg-purple-500/10' },
+    youtube:   { label: 'YouTube',   Icon: Youtube,    tone: 'text-red-500',     bg: 'bg-red-500/10' },
+    facebook:  { label: 'Facebook',  Icon: Facebook,   tone: 'text-blue-500',    bg: 'bg-blue-500/10' },
+    instagram: { label: 'Instagram', Icon: Instagram,  tone: 'text-purple-500',  bg: 'bg-purple-500/10' },
+    tiktok:    { label: 'TikTok',    Icon: TikTokIcon, tone: 'text-neutral-100', bg: 'bg-neutral-500/10' },
 };
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string; dot: string }> = {
@@ -282,15 +289,15 @@ const SocialUploadsPage: React.FC = () => {
             </div>
 
             {/* ── PER-PLATFORM BREAKDOWN ─────────────────────────────── */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {(Object.keys(PLATFORM_META) as SocialPlatform[]).map(p => {
                     const meta = PLATFORM_META[p];
                     const is_active = platform_filter === p;
                     const p_total = platform_stats?.total ?? stats.total;
-                    const count   = platform_stats?.by_platform[p] ?? stats.by_platform[p];
+                    const count   = platform_stats?.by_platform[p] ?? stats.by_platform[p] ?? 0;
                     const pct     = p_total > 0 ? Math.round((count / p_total) * 100) : 0;
-                    const tint    = p === 'youtube' ? 'from-red-500/[0.08] via-red-500/[0.04]' : p === 'facebook' ? 'from-blue-500/[0.08] via-blue-500/[0.04]' : 'from-purple-500/[0.08] via-purple-500/[0.04]';
-                    const bar     = p === 'youtube' ? 'from-red-500 to-rose-400' : p === 'facebook' ? 'from-blue-500 to-cyan-400' : 'from-purple-500 to-pink-400';
+                    const tint    = p === 'youtube' ? 'from-red-500/[0.08] via-red-500/[0.04]' : p === 'facebook' ? 'from-blue-500/[0.08] via-blue-500/[0.04]' : p === 'instagram' ? 'from-purple-500/[0.08] via-purple-500/[0.04]' : 'from-neutral-500/[0.08] via-neutral-500/[0.04]';
+                    const bar     = p === 'youtube' ? 'from-red-500 to-rose-400' : p === 'facebook' ? 'from-blue-500 to-cyan-400' : p === 'instagram' ? 'from-purple-500 to-pink-400' : 'from-neutral-400 to-neutral-300';
                     return (
                         <button key={p} type="button"
                             onClick={() => change_platform(is_active ? 'all' : p)}
@@ -317,7 +324,7 @@ const SocialUploadsPage: React.FC = () => {
             {/* ── FILTER BAR ─────────────────────────────────────────── */}
             <div className="glass-card px-3 py-2 flex items-center gap-0 overflow-x-auto scrollbar-none justify-between">
                 <FilterGroup label="Platform" Icon={Globe}>
-                    {(['all', 'youtube', 'facebook', 'instagram'] as const).map(k => (
+                    {(['all', 'youtube', 'facebook', 'instagram', 'tiktok'] as const).map(k => (
                         <FilterChip key={k} active={platform_filter === k} onClick={() => change_platform(k)}
                             Icon={k === 'all' ? undefined : PLATFORM_META[k].Icon}
                             iconTone={k === 'all' ? undefined : PLATFORM_META[k].tone}>

@@ -54,7 +54,7 @@ export interface ListEventsParams {
     event_types?: string;
 }
 
-export type SupportedPlatform = "facebook" | "youtube" | "instagram";
+export type SupportedPlatform = "facebook" | "youtube" | "instagram" | "tiktok";
 export type ScheduleFrequency = "every_day" | "every_week" | "every_month" | "custom_range";
 export type ScheduleStatus = "draft" | "scheduled" | "completed" | "cancelled";
 export type ScheduleItemStatus = "draft" | "scheduled" | "uploading" | "uploaded" | "failed" | "cancelled";

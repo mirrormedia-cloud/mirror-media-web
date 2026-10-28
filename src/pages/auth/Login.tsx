@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, PlaySquare, Loader2 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Mail, Lock, PlaySquare, Loader2, Check } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { Input } from '../../components/ui/Input';
 import { AuthLayout } from '../../components/auth/AuthLayout';
@@ -15,6 +15,7 @@ const Login: React.FC = () => {
   const [errors, setErrors] = useState<any>({});
   const [submitting, setSubmitting] = useState(false);
   const [server_error, setServerError] = useState<string | null>(null);
+  const [accepted_policy, setAcceptedPolicy] = useState(false);
 
   const triggerGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -47,6 +48,7 @@ const Login: React.FC = () => {
     const newErrors: any = {};
     if (!email) newErrors.email = 'Email is required';
     if (!password) newErrors.password = 'Password is required';
+    if (!accepted_policy) newErrors.policy = 'Please accept the Privacy Policy and Terms to continue';
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -109,13 +111,62 @@ const Login: React.FC = () => {
             </div> */}
           </div>
 
+          <div className="space-y-1">
+            <label className="flex items-start gap-3 cursor-pointer select-none">
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={accepted_policy}
+                onClick={() => {
+                  setAcceptedPolicy((v) => !v);
+                  setErrors((prev: any) => ({ ...prev, policy: undefined }));
+                }}
+                className={`mt-0.5 flex items-center justify-center w-5 h-5 rounded-md border transition-all shrink-0 ${
+                  accepted_policy
+                    ? 'bg-brand-emerald border-brand-emerald'
+                    : 'bg-transparent border-border-subtle hover:border-brand-emerald'
+                }`}
+              >
+                {accepted_policy && <Check size={14} className="text-white" />}
+              </button>
+              <span
+                className="text-sm text-text-muted leading-5"
+                onClick={() => {
+                  setAcceptedPolicy((v) => !v);
+                  setErrors((prev: any) => ({ ...prev, policy: undefined }));
+                }}
+              >
+                I have read and agree to the{' '}
+                <Link
+                  to="/privacy-policy"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-brand-emerald font-semibold hover:text-brand-blue transition-colors"
+                >
+                  Privacy Policy
+                </Link>{' '}
+                and{' '}
+                <Link
+                  to="/terms-policy"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-brand-emerald font-semibold hover:text-brand-blue transition-colors"
+                >
+                  Terms &amp; Conditions
+                </Link>
+                .
+              </span>
+            </label>
+            {errors.policy && (
+              <p className="text-xs text-red-400 pl-8">{errors.policy}</p>
+            )}
+          </div>
+
           {server_error && (
             <p className="text-sm text-red-400 text-center -mt-2">{server_error}</p>
           )}
 
           <button
             onClick={handleLogin}
-            disabled={submitting}
+            disabled={submitting || !accepted_policy}
             className="btn-primary w-full py-4 text-lg flex items-center justify-center gap-2 disabled:opacity-60"
           >
             {submitting && <Loader2 size={18} className="animate-spin" />}
@@ -127,7 +178,16 @@ const Login: React.FC = () => {
             <div className="relative flex justify-center text-xs uppercase"><span className="bg-bg-main px-2 text-text-muted transition-colors duration-300">Or continue with</span></div>
           </div>
 
-          <button onClick={() => triggerGoogleLogin()} disabled={submitting} className="w-full flex items-center justify-center gap-3 bg-black/5 dark:bg-white/5 border border-border-subtle rounded-2xl py-3.5 font-medium transition-all hover:bg-black/10 dark:hover:bg-white/10 text-text-main disabled:opacity-60">
+          <button
+            onClick={() => {
+              if (!accepted_policy) {
+                setErrors((prev: any) => ({ ...prev, policy: 'Please accept the Privacy Policy and Terms to continue' }));
+                return;
+              }
+              triggerGoogleLogin();
+            }}
+            disabled={submitting || !accepted_policy}
+            className="w-full flex items-center justify-center gap-3 bg-black/5 dark:bg-white/5 border border-border-subtle rounded-2xl py-3.5 font-medium transition-all hover:bg-black/10 dark:hover:bg-white/10 text-text-main disabled:opacity-60">
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />

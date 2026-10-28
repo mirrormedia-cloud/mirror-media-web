@@ -10,7 +10,7 @@
 
 import { api_client, normalize_envelope, ServiceEnvelope } from "@/lib/api_client";
 
-export type AnalyticsPlatform = "all" | "youtube" | "facebook" | "instagram";
+export type AnalyticsPlatform = "all" | "youtube" | "facebook" | "instagram" | "tiktok";
 export type AnalyticsStatus = "all" | "published" | "scheduled" | "failed" | "processing" | "draft";
 export type AnalyticsDateRange = "today" | "last_7_days" | "last_30_days" | "custom";
 

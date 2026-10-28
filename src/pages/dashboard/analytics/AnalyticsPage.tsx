@@ -24,6 +24,12 @@ import {
     Calendar,
     Zap,
 } from 'lucide-react';
+
+const TikTokIcon: React.FC<{ size?: number; className?: string }> = ({ size = 24, className }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
+        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z" />
+    </svg>
+);
 import toast from 'react-hot-toast';
 import {
     analytics_service,
@@ -38,11 +44,12 @@ import { ThemedDatePicker } from '../../../components/ui/ThemedDatePicker';
 
 // ── Theme map ─────────────────────────────────────────────────────────
 
-const PLATFORM_TONE: Record<AnalyticsItem['platform'] | 'all', { label: string; pill: string; tile: string; Icon: React.ComponentType<{ size?: number; className?: string }> }> = {
-    all: { label: 'All Platforms', pill: 'bg-gradient-to-r from-brand-emerald via-purple-500 to-brand-blue text-white', tile: 'text-text-main', Icon: BarChart3 },
-    youtube: { label: 'YouTube', pill: 'bg-red-500/15 text-red-400', tile: 'text-red-500', Icon: Youtube },
-    facebook: { label: 'Facebook', pill: 'bg-brand-blue/15 text-brand-blue', tile: 'text-brand-blue', Icon: Facebook },
-    instagram: { label: 'Instagram', pill: 'bg-purple-500/15 text-purple-400', tile: 'text-purple-400', Icon: Instagram },
+const PLATFORM_TONE: Record<AnalyticsItem['platform'] | 'all' | 'tiktok', { label: string; pill: string; tile: string; Icon: React.ComponentType<{ size?: number; className?: string }> }> = {
+    all:       { label: 'All Platforms', pill: 'bg-gradient-to-r from-brand-emerald via-purple-500 to-brand-blue text-white', tile: 'text-text-main',   Icon: BarChart3 },
+    youtube:   { label: 'YouTube',       pill: 'bg-red-500/15 text-red-400',                                                   tile: 'text-red-500',    Icon: Youtube },
+    facebook:  { label: 'Facebook',      pill: 'bg-brand-blue/15 text-brand-blue',                                             tile: 'text-brand-blue', Icon: Facebook },
+    instagram: { label: 'Instagram',     pill: 'bg-purple-500/15 text-purple-400',                                             tile: 'text-purple-400', Icon: Instagram },
+    tiktok:    { label: 'TikTok',        pill: 'bg-neutral-500/15 text-neutral-300',                                           tile: 'text-neutral-300', Icon: TikTokIcon },
 };
 
 function fmt(n: number): string {
@@ -157,7 +164,7 @@ const AnalyticsPage: React.FC = () => {
             {/* ── FILTER BAR ──────────────────────────────────────── */}
             <div className="glass-card px-4 py-2.5 flex flex-wrap items-center gap-2 justify-between">
                 <div className="flex flex-wrap items-center gap-2 ">
-                    {(['all', 'youtube', 'facebook', 'instagram'] as AnalyticsPlatform[]).map(p => {
+                    {(['all', 'youtube', 'facebook', 'instagram', 'tiktok'] as AnalyticsPlatform[]).map(p => {
                         const meta = PLATFORM_TONE[p];
                         const active = platform === p;
                         return (
