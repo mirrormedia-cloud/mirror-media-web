@@ -34,6 +34,7 @@ import { CommonSearchSelect, SearchSelectOption } from '../../../components/ui/C
 import { ThemedDatePicker } from '../../../components/ui/ThemedDatePicker';
 import { ThemedTimePicker } from '../../../components/ui/ThemedTimePicker';
 import { useConfirm } from '../../../components/ui/ConfirmDialog';
+import { usePlatformAccess } from '../../../lib/platform_access';
 import { social_service, SocialPlatform, SocialUploadRow } from '../../../services/social_service';
 import { media_analysis_service, AnalysisPlatform } from '../../../services/media_analysis_service';
 
@@ -72,7 +73,10 @@ function combine_iso(date_str: string, time_str: string): string | null {
 
 const SocialUploadModal: React.FC<Props> = ({ isOpen, onClose, item }) => {
     const confirm = useConfirm();
-    const [platforms, set_platforms] = useState<SocialPlatform[]>(['youtube']);
+    const access = usePlatformAccess();
+    // Review accounts can't pick YouTube, so default to their first allowed platform.
+    const default_platform: SocialPlatform = access.is_allowed('youtube') ? 'youtube' : 'tiktok';
+    const [platforms, set_platforms] = useState<SocialPlatform[]>([default_platform]);
     const [title, set_title] = useState('');
     const [description, set_description] = useState('');
     const [tags_csv, set_tags_csv] = useState('');
@@ -94,7 +98,7 @@ const SocialUploadModal: React.FC<Props> = ({ isOpen, onClose, item }) => {
     // Reset on open with sensible defaults from the library item.
     useEffect(() => {
         if (!isOpen || !item) return;
-        set_platforms(['youtube']);
+        set_platforms([default_platform]);
         set_title(item.title || item.file_name || '');
         set_description(item.description || '');
         set_tags_csv('');
@@ -107,7 +111,7 @@ const SocialUploadModal: React.FC<Props> = ({ isOpen, onClose, item }) => {
         set_results(null);
         set_analyzing(null);
         set_auto_details(false);
-    }, [isOpen, item]);
+    }, [isOpen, item, default_platform]);
 
     /**
      * Run Gemini analysis with the prompt template that matches the
@@ -153,7 +157,7 @@ const SocialUploadModal: React.FC<Props> = ({ isOpen, onClose, item }) => {
 
     const media_ready = !!item?.file_url;
 
-    const platform_chips = useMemo(() => PLATFORM_META, []);
+    const platform_chips = useMemo(() => access.filter(PLATFORM_META, p => p.key), [access]);
 
     if (!isOpen || !item) return null;
 
@@ -305,7 +309,7 @@ const SocialUploadModal: React.FC<Props> = ({ isOpen, onClose, item }) => {
                             <span className="text-[10px] text-text-muted">Generates per-platform suggestions</span>
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                            {(['general', 'youtube', 'facebook', 'instagram', 'tiktok'] as AnalysisPlatform[]).map(p => {
+                            {access.filter(['general', 'youtube', 'facebook', 'instagram', 'tiktok'] as AnalysisPlatform[]).map(p => {
                                 const busy = analyzing === p;
                                 const Icon = p === 'youtube' ? Youtube : p === 'facebook' ? Facebook : p === 'instagram' ? Instagram : p === 'tiktok' ? TikTokIcon : Sparkles;
                                 const tone = p === 'youtube' ? 'text-red-500' : p === 'facebook' ? 'text-blue-500' : p === 'instagram' ? 'text-purple-500' : p === 'tiktok' ? 'text-neutral-100' : 'text-brand-emerald';

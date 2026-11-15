@@ -16,6 +16,7 @@ import {
     CheckCircle2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { usePlatformAccess } from '../../../lib/platform_access';
 import { LibraryItem } from '../../../types';
 import {
     calendar_service,
@@ -83,6 +84,8 @@ const ScheduleUploadModal: React.FC<Props> = ({ isOpen, onClose, initial_items, 
     const [step, set_step] = useState<Step>(1);
     const [items, set_items] = useState<LibraryItem[]>([]);
     const [platforms, set_platforms] = useState<SupportedPlatform[]>([]);
+    const access = usePlatformAccess();
+    const allowed_platforms = useMemo(() => access.filter(PLATFORM_OPTIONS, p => p.value), [access]);
 
     const [scheduled, set_scheduled] = useState(true);
     const [frequency, set_frequency] = useState<ScheduleFrequency>('every_day');
@@ -139,8 +142,8 @@ const ScheduleUploadModal: React.FC<Props> = ({ isOpen, onClose, initial_items, 
     }, [release_count]);
 
     const platform_options = useMemo<SearchSelectOption[]>(
-        () => PLATFORM_OPTIONS.map(p => ({ label: p.label, value: p.value })),
-        [],
+        () => allowed_platforms.map(p => ({ label: p.label, value: p.value })),
+        [allowed_platforms],
     );
 
     // Post-R2 readiness: a library row exists only when the R2 upload
@@ -156,7 +159,7 @@ const ScheduleUploadModal: React.FC<Props> = ({ isOpen, onClose, initial_items, 
     };
 
     const select_all_platforms = () => {
-        set_platforms(PLATFORM_OPTIONS.map(p => p.value));
+        set_platforms(allowed_platforms.map(p => p.value));
     };
 
     const toggle_weekday = (wd: number) => {
@@ -478,7 +481,7 @@ const Step2Platforms: React.FC<{
             placeholder="Pick platforms…"
         />
         <div className="grid grid-cols-3 gap-2">
-            {PLATFORM_OPTIONS.map(p => {
+            {PLATFORM_OPTIONS.filter(p => options.some(o => o.value === p.value)).map(p => {
                 const sel = platforms.includes(p.value);
                 return (
                     <button

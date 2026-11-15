@@ -31,6 +31,7 @@ const TikTokIcon: React.FC<{ size?: number; className?: string }> = ({ size = 24
     </svg>
 );
 import toast from 'react-hot-toast';
+import { usePlatformAccess } from '../../../lib/platform_access';
 import {
     analytics_service,
     AnalyticsItem,
@@ -62,6 +63,7 @@ function fmt(n: number): string {
 // ── Page ──────────────────────────────────────────────────────────────
 
 const AnalyticsPage: React.FC = () => {
+    const access = usePlatformAccess();
     const [platform, set_platform] = useState<AnalyticsPlatform>('all');
     const [status, set_status] = useState<AnalyticsStatus>('all');
     const [start_date, set_start_date] = useState('');
@@ -164,7 +166,7 @@ const AnalyticsPage: React.FC = () => {
             {/* ── FILTER BAR ──────────────────────────────────────── */}
             <div className="glass-card px-4 py-2.5 flex flex-wrap items-center gap-2 justify-between">
                 <div className="flex flex-wrap items-center gap-2 ">
-                    {(['all', 'youtube', 'facebook', 'instagram', 'tiktok'] as AnalyticsPlatform[]).map(p => {
+                    {access.filter(['all', 'youtube', 'facebook', 'instagram', 'tiktok'] as AnalyticsPlatform[]).map(p => {
                         const meta = PLATFORM_TONE[p];
                         const active = platform === p;
                         return (

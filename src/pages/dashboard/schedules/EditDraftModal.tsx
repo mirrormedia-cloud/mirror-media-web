@@ -21,6 +21,7 @@ import {
     CalendarDays,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { usePlatformAccess } from '../../../lib/platform_access';
 import {
     calendar_service,
     ScheduleBatch,
@@ -107,6 +108,9 @@ function ordinal(n: number): string {
 }
 
 const EditDraftModal: React.FC<Props> = ({ isOpen, onClose, batch, items, onSaved }) => {
+    const access = usePlatformAccess();
+    const allowed_all = useMemo(() => access.filter(ALL_PLATFORMS), [access]);
+    const platform_opts = useMemo(() => access.filter(PLATFORM_OPTS, o => o.value), [access]);
     // ── Form state — seeded from the batch on open ──────────────────────
     const [name, set_name] = useState('');
     const [scheduled, set_scheduled] = useState(true);
@@ -117,7 +121,7 @@ const EditDraftModal: React.FC<Props> = ({ isOpen, onClose, batch, items, onSave
     const [end_date, set_end_date] = useState('');
     const [weekdays, set_weekdays] = useState<number[]>([]);
     const [month_days, set_month_days] = useState<number[]>([]);
-    const [platforms, set_platforms] = useState<SupportedPlatform[]>(ALL_PLATFORMS);
+    const [platforms, set_platforms] = useState<SupportedPlatform[]>(allowed_all);
     const [color, set_color] = useState('random');
     const [custom_color, set_custom_color] = useState('#10B981');
     const [title_prefix, set_title_prefix] = useState('');
@@ -143,7 +147,7 @@ const EditDraftModal: React.FC<Props> = ({ isOpen, onClose, batch, items, onSave
         set_end_date(batch.end_date ?? '');
         set_weekdays(batch.weekdays ?? []);
         set_month_days(batch.month_days ?? []);
-        set_platforms(((batch.platforms ?? []) as SupportedPlatform[]).filter(p => ALL_PLATFORMS.includes(p)));
+        set_platforms(((batch.platforms ?? []) as SupportedPlatform[]).filter(p => allowed_all.includes(p)));
         // Color stored on batch may already be a hex string (Custom case)
         // or one of the named values. Heuristic: if it starts with # treat
         // as Custom + seed the picker value.
@@ -465,9 +469,9 @@ const EditDraftModal: React.FC<Props> = ({ isOpen, onClose, batch, items, onSave
                                     <label className="text-[11px] uppercase font-bold text-text-muted tracking-wider">Platforms</label>
                                     <CommonSearchSelect
                                         is_multi
-                                        options={PLATFORM_OPTS}
+                                        options={platform_opts}
                                         value={platforms as string[]}
-                                        on_change={(v) => set_platforms((v as string[]).filter(x => ALL_PLATFORMS.includes(x as SupportedPlatform)) as SupportedPlatform[])}
+                                        on_change={(v) => set_platforms((v as string[]).filter(x => allowed_all.includes(x as SupportedPlatform)) as SupportedPlatform[])}
                                         placeholder="Pick platforms…"
                                         // Collapse the chip strip — show "All" when 3-of-3 are
                                         // selected, otherwise a single comma-joined string. Way less
@@ -476,7 +480,7 @@ const EditDraftModal: React.FC<Props> = ({ isOpen, onClose, batch, items, onSave
                                             if (all_selected.length === 0) {
                                                 return <span className="text-text-muted/70">Pick platforms…</span>;
                                             }
-                                            if (all_selected.length === ALL_PLATFORMS.length) {
+                                            if (all_selected.length === allowed_all.length) {
                                                 return <span className="text-text-main">All</span>;
                                             }
                                             return (

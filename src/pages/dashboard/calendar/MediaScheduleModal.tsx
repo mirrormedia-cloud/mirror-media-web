@@ -24,6 +24,7 @@ import {
     Shuffle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { usePlatformAccess } from '../../../lib/platform_access';
 import {
     calendar_service,
     SchedulePayload,
@@ -138,6 +139,8 @@ function expand_platform(p: PlatformChoice[]): SupportedPlatform[] {
 }
 
 const MediaScheduleModal: React.FC<Props> = ({ isOpen, onClose, onSaved }) => {
+    const access = usePlatformAccess();
+    const platform_options = useMemo(() => access.filter(PLATFORM_OPTIONS, o => String(o.value)), [access]);
     // ── Selection state ─────────────────────────────────────────────────
     const [library_files, set_library_files] = useState<LibraryItem[]>([]);
     const [local_files, set_local_files] = useState<File[]>([]);
@@ -467,7 +470,7 @@ const MediaScheduleModal: React.FC<Props> = ({ isOpen, onClose, onSaved }) => {
 
     const build_payload = (): SchedulePayload | null => {
         if (!locked_ott_id) return null;
-        const platforms = expand_platform(platform_choice);
+        const platforms = access.filter(expand_platform(platform_choice));
 
         let eff_frequency: ScheduleFrequency;
         let eff_release_count: number;
@@ -948,7 +951,7 @@ const MediaScheduleModal: React.FC<Props> = ({ isOpen, onClose, onSaved }) => {
                                     <label className="text-[11px] uppercase font-bold text-text-muted tracking-wider">Platform</label>
                                     <CommonSearchSelect
                                         is_multi
-                                        options={PLATFORM_OPTIONS}
+                                        options={platform_options}
                                         value={platform_choice}
                                         on_change={(v) => set_platform_choice(prev => handle_platform_multi_change(prev, v))}
                                     />
@@ -1142,7 +1145,7 @@ const MediaScheduleModal: React.FC<Props> = ({ isOpen, onClose, onSaved }) => {
                         <PreviewView
                             preview={preview_items}
                             warnings={preview_warnings}
-                            platforms={expand_platform(platform_choice)}
+                            platforms={access.filter(expand_platform(platform_choice))}
                             files={library_files}
                             on_reorder={(from_idx, to_idx) => {
                                 if (from_idx === to_idx) return;

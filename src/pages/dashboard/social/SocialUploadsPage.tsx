@@ -53,6 +53,7 @@ const TikTokIcon: React.FC<{ size?: number; className?: string }> = ({ size = 24
     </svg>
 );
 import toast from 'react-hot-toast';
+import { usePlatformAccess } from '../../../lib/platform_access';
 import { social_service, SocialPlatform, SocialUploadRow } from '../../../services/social_service';
 import { ThemedDatePicker } from '../../../components/ui/ThemedDatePicker';
 import { useOTT } from '../../../context/OTTContext';
@@ -108,6 +109,7 @@ function file_icon(file_name: string | null | undefined): React.ReactNode {
 // ── Main page ──────────────────────────────────────────────────────────
 
 const SocialUploadsPage: React.FC = () => {
+    const access = usePlatformAccess();
     const { otts } = useOTT();
     const ott_map = useMemo(
         () => new Map<string, OttPlatformSummary>(otts.map(o => [o.id, o])),
@@ -324,7 +326,7 @@ const SocialUploadsPage: React.FC = () => {
             {/* ── FILTER BAR ─────────────────────────────────────────── */}
             <div className="glass-card px-3 py-2 flex items-center gap-0 overflow-x-auto scrollbar-none justify-between">
                 <FilterGroup label="Platform" Icon={Globe}>
-                    {(['all', 'youtube', 'facebook', 'instagram', 'tiktok'] as const).map(k => (
+                    {access.filter(['all', 'youtube', 'facebook', 'instagram', 'tiktok'] as const).map(k => (
                         <FilterChip key={k} active={platform_filter === k} onClick={() => change_platform(k)}
                             Icon={k === 'all' ? undefined : PLATFORM_META[k].Icon}
                             iconTone={k === 'all' ? undefined : PLATFORM_META[k].tone}>

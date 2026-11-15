@@ -19,6 +19,7 @@ const TikTokIcon: React.FC<{ size?: number; className?: string }> = ({ size = 24
 );
 import toast from 'react-hot-toast';
 import { useConfirm } from '../../../components/ui/ConfirmDialog';
+import { usePlatformAccess } from '../../../lib/platform_access';
 import {
     social_service,
     SocialAccount,
@@ -89,6 +90,7 @@ function format_remaining(seconds: number | null): string {
 
 const SocialMediaPage: React.FC = () => {
     const confirm = useConfirm();
+    const access = usePlatformAccess();
     const [accounts, set_accounts] = useState<SocialAccount[]>([]);
     const [loading, set_loading] = useState(false);
     const [busy_platform, set_busy_platform] = useState<SocialPlatform | null>(null);
@@ -227,6 +229,7 @@ const SocialMediaPage: React.FC = () => {
                             meta={p}
                             accounts={accounts_by_platform.get(p.key) ?? []}
                             busy={busy_platform === p.key}
+                            coming_soon={!access.is_allowed(p.key)}
                             on_connect={() => open_connect(p.key)}
                             on_refresh={() => handle_refresh(p.key)}
                             on_disconnect={() => handle_disconnect(p.key)}
@@ -249,12 +252,14 @@ interface CardProps {
     on_refresh: () => void;
     on_disconnect: () => void;
     tick: number;
+    /** Review accounts: platform is shown but cannot be connected yet. */
+    coming_soon?: boolean;
 }
 
-const PlatformCard: React.FC<CardProps> = ({ meta, accounts, busy, on_connect, on_refresh, on_disconnect, tick }) => {
+const PlatformCard: React.FC<CardProps> = ({ meta, accounts, busy, on_connect, on_refresh, on_disconnect, tick, coming_soon = false }) => {
     const { Icon, label, accent, iconColor, description, key: platform } = meta;
-    const connected = accounts.length > 0;
-    const primary = accounts[0] ?? null;
+    const connected = !coming_soon && accounts.length > 0;
+    const primary = connected ? accounts[0] ?? null : null;
 
     // Tick the countdown locally — recompute remaining from `expiresAt`
     // each render so the value reflects "now" instead of when we fetched.
@@ -367,7 +372,11 @@ const PlatformCard: React.FC<CardProps> = ({ meta, accounts, busy, on_connect, o
             )}
 
             <div className="flex items-center gap-2 mt-auto">
-                {connected ? (
+                {coming_soon ? (
+                    <span className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border-subtle text-text-muted text-xs font-bold cursor-not-allowed">
+                        <Clock size={14} /> Coming soon
+                    </span>
+                ) : connected ? (
                     <>
                         {primary?.has_refresh_token && (
                             <button
