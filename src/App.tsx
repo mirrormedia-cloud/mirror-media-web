@@ -13,6 +13,8 @@ import ResetPassword from './pages/auth/ResetPassword';
 import CompleteProfile from './pages/auth/CompleteProfile';
 import PrivacyPolicy from './pages/auth/PrivacyPolicy';
 import TermsPolicy from './pages/auth/TermsPolicy';
+import Home from './pages/public/Home';
+import Contact from './pages/public/Contact';
 import { DashboardLayout } from './pages/dashboard/DashboardLayout';
 import { Overview } from './pages/dashboard/Overview';
 import RegisterOTT from './pages/dashboard/ott/RegisterOTT';
@@ -104,6 +106,9 @@ export default function App() {
           <Route path="/complete-profile" element={<CompleteProfile />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-policy" element={<TermsPolicy />} />
+          <Route path="/privacy" element={<Navigate to="/privacy-policy" replace />} />
+          <Route path="/terms" element={<Navigate to="/terms-policy" replace />} />
+          <Route path="/contact" element={<Contact />} />
 
           {/* Dashboard Routes — protected. RequireAuth holds rendering during
               the boot /me check, then redirects unauthenticated users to /login. */}
@@ -173,7 +178,7 @@ export default function App() {
         </Route>
 
           {/* Fallback */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<Home />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
         {/* Sticky upload progress popup — survives route changes so a

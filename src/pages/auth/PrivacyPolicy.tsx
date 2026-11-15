@@ -1,116 +1,85 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShieldCheck } from 'lucide-react';
-import { AuthLayout } from '../../components/auth/AuthLayout';
+import { PublicLayout } from '../../components/public/PublicLayout';
+import { SITE_NAME, CONTACT_EMAIL, LEGAL_LAST_UPDATED } from '../../lib/site';
 
-const PrivacyPolicy: React.FC = () => {
-  const navigate = useNavigate();
+const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
+  <section className="space-y-2">
+    <h2 className="text-xl font-semibold">{title}</h2>
+    <div className="text-text-muted space-y-2 leading-relaxed">{children}</div>
+  </section>
+);
 
-  return (
-    <AuthLayout>
-      <div className="w-full max-w-3xl my-10">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-emerald to-brand-blue mb-4 shadow-lg shadow-brand-emerald/20">
-            <ShieldCheck className="text-white" size={32} />
-          </div>
-          <h1 className="text-3xl font-bold text-text-main mb-2">Privacy Policy</h1>
-          <p className="text-text-muted">Last updated: October 28, 2026</p>
-        </div>
+const PrivacyPolicy: React.FC = () => (
+  <PublicLayout>
+    <article className="max-w-3xl mx-auto px-4 sm:px-6 py-16 space-y-8">
+      <header className="text-center">
+        <h1 className="text-4xl font-bold">Privacy Policy</h1>
+        <p className="text-text-muted mt-2">Last updated: {LEGAL_LAST_UPDATED}</p>
+      </header>
 
-        <div className="glass-card p-8 space-y-6 text-left max-h-[70vh] overflow-y-auto text-text-main">
-          <section className="space-y-2">
-            <h2 className="text-xl font-semibold">1. Information We Collect</h2>
-            <p className="text-text-muted">
-              We collect information you provide directly when you create an account, such as your
-              name, email address, profile picture, and any content you upload to the platform.
-              We also collect limited technical information (device type, browser, IP address) to
-              operate and secure the service.
-            </p>
-          </section>
+      <p className="text-text-muted leading-relaxed">
+        This Privacy Policy explains how {SITE_NAME} ("we", "us") collects, uses, shares and
+        protects information when you use our website and video management platform (the
+        "Service").
+      </p>
 
-          <section className="space-y-2">
-            <h2 className="text-xl font-semibold">2. How We Use Your Information</h2>
-            <p className="text-text-muted">
-              Your information is used to authenticate you, provide and improve platform features,
-              deliver content you request, communicate service updates, and comply with legal
-              obligations. We do not sell your personal data to third parties.
-            </p>
-          </section>
+      <Section title="1. Information we collect">
+        <p><strong>Account information:</strong> name, email address and profile picture, provided by you or by Google Sign-In.</p>
+        <p><strong>Content:</strong> videos, thumbnails, titles, captions and other metadata that you upload or import into the Service.</p>
+        <p><strong>Connected platform data:</strong> when you connect a third-party account (YouTube, Facebook, Instagram or TikTok), we receive OAuth access and refresh tokens plus the basic profile details that platform allows (for example, account ID, display name and avatar).</p>
+        <p><strong>Technical data:</strong> IP address, browser and device type, and logs needed to operate and secure the Service.</p>
+      </Section>
 
-          <section className="space-y-2">
-            <h2 className="text-xl font-semibold">3. Third-Party Services</h2>
-            <p className="text-text-muted">
-              The platform integrates with services such as Google (for sign-in), YouTube,
-              Facebook, and Instagram when you choose to connect those accounts. Those providers
-              handle data under their own privacy policies, and we only access the scopes you
-              authorize.
-            </p>
-          </section>
+      <Section title="2. TikTok data">
+        <p>If you connect a TikTok account through TikTok Login Kit, we request only these scopes:</p>
+        <ul className="list-disc pl-6 space-y-1">
+          <li><code>user.info.basic</code>: your open ID, display name and avatar, used only to show which TikTok account is connected.</li>
+          <li><code>video.upload</code> and <code>video.publish</code>: used only to upload or publish the videos you select, with the caption, privacy level and interaction settings you choose, at the time you choose.</li>
+        </ul>
+        <p>We do not read your TikTok followers, messages, likes or other content. We never post to TikTok without an explicit action or schedule that you create. TikTok tokens are stored securely on our servers and deleted when you disconnect the account. You can also revoke access at any time in TikTok under Settings → Security → Manage app permissions.</p>
+      </Section>
 
-          <section className="space-y-2">
-            <h2 className="text-xl font-semibold">4. Data Storage &amp; Security</h2>
-            <p className="text-text-muted">
-              Media files and metadata are stored on managed cloud infrastructure with
-              industry-standard access controls, encryption in transit, and regular backups.
-              No system is perfectly secure, but we work to protect your data against
-              unauthorized access.
-            </p>
-          </section>
+      <Section title="3. How we use information">
+        <p>We use information to authenticate you, provide the Service's features (library management, AI metadata generation, scheduling, publishing and analytics), keep the Service secure, send service messages, and meet legal obligations. We do not sell personal data, and we do not use it for advertising.</p>
+      </Section>
 
-          <section className="space-y-2">
-            <h2 className="text-xl font-semibold">5. Cookies</h2>
-            <p className="text-text-muted">
-              We use essential cookies and local storage to keep you signed in and remember
-              preferences such as your theme. We do not use advertising trackers.
-            </p>
-          </section>
+      <Section title="4. Sharing">
+        <p>We share data only (a) with the platforms you connect, so we can publish content at your request; (b) with infrastructure providers (cloud hosting, storage and AI processing) that act on our behalf under confidentiality obligations; and (c) when the law requires it.</p>
+      </Section>
 
-          <section className="space-y-2">
-            <h2 className="text-xl font-semibold">6. Your Rights</h2>
-            <p className="text-text-muted">
-              You may update your profile, disconnect linked accounts, or request deletion of
-              your account at any time by contacting the administrator. On request, we will
-              remove your personal data unless retention is required by law.
-            </p>
-          </section>
+      <Section title="5. Google API data">
+        <p>Our use of information received from Google APIs follows the Google API Services User Data Policy, including its Limited Use requirements.</p>
+      </Section>
 
-          <section className="space-y-2">
-            <h2 className="text-xl font-semibold">7. Children's Privacy</h2>
-            <p className="text-text-muted">
-              The platform is not directed to children under 13, and we do not knowingly collect
-              personal information from them.
-            </p>
-          </section>
+      <Section title="6. Retention and deletion">
+        <p>We keep data while your account is active. If you disconnect a platform, we delete its tokens right away. To delete your account and the data linked to it, email <a className="text-brand-emerald" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> from your registered address. We complete deletion within 30 days, except where the law requires us to keep data.</p>
+      </Section>
 
-          <section className="space-y-2">
-            <h2 className="text-xl font-semibold">8. Changes to This Policy</h2>
-            <p className="text-text-muted">
-              We may update this policy from time to time. Material changes will be announced in
-              the dashboard, and continued use after an update constitutes acceptance of the
-              revised policy.
-            </p>
-          </section>
+      <Section title="7. Security">
+        <p>We use encryption in transit (HTTPS), access controls and secured storage for tokens and media. No system is perfectly secure, but we work to protect your data from unauthorised access.</p>
+      </Section>
 
-          <section className="space-y-2">
-            <h2 className="text-xl font-semibold">9. Contact</h2>
-            <p className="text-text-muted">
-              Questions about this policy can be sent to the platform administrator.
-            </p>
-          </section>
-        </div>
+      <Section title="8. Cookies">
+        <p>We use only essential cookies and local storage to keep you signed in and to remember preferences such as your theme. We do not use advertising trackers.</p>
+      </Section>
 
-        <div className="mt-6 flex justify-center">
-          <button
-            onClick={() => navigate(-1)}
-            className="btn-primary px-6 py-3 flex items-center gap-2"
-          >
-            <ArrowLeft size={16} />
-            Back
-          </button>
-        </div>
-      </div>
-    </AuthLayout>
-  );
-};
+      <Section title="9. Your rights">
+        <p>Depending on where you live, you may have the right to access, correct, export or delete your personal data, or to object to its processing. To exercise these rights, contact us at the email below.</p>
+      </Section>
+
+      <Section title="10. Children">
+        <p>The Service is not directed to anyone under 18, and we do not knowingly collect their personal information.</p>
+      </Section>
+
+      <Section title="11. Changes">
+        <p>We may update this policy from time to time. We will post the new version on this page and update the date above.</p>
+      </Section>
+
+      <Section title="12. Contact">
+        <p>Privacy questions or requests: <a className="text-brand-emerald" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a></p>
+      </Section>
+    </article>
+  </PublicLayout>
+);
 
 export default PrivacyPolicy;

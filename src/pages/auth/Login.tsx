@@ -199,7 +199,13 @@ const Login: React.FC = () => {
         </div>
 
         <p className="text-center mt-8 text-sm text-text-muted">
-          Don't have an account? <span className="text-brand-emerald font-semibold cursor-pointer">Contact Admin</span>
+          Don't have an account?{' '}
+          <Link to="/contact" className="text-brand-emerald font-semibold">Contact us</Link>
+        </p>
+        <p className="text-center mt-3 text-xs text-text-muted space-x-3">
+          <Link to="/" className="hover:text-brand-emerald">Home</Link>
+          <Link to="/privacy-policy" className="hover:text-brand-emerald">Privacy Policy</Link>
+          <Link to="/terms-policy" className="hover:text-brand-emerald">Terms of Service</Link>
         </p>
       </div>
     </AuthLayout>

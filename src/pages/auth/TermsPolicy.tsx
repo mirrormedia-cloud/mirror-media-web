@@ -1,122 +1,75 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, FileText } from 'lucide-react';
-import { AuthLayout } from '../../components/auth/AuthLayout';
+import { PublicLayout } from '../../components/public/PublicLayout';
+import { SITE_NAME, CONTACT_EMAIL, LEGAL_LAST_UPDATED } from '../../lib/site';
 
-const TermsPolicy: React.FC = () => {
-  const navigate = useNavigate();
+const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
+  <section className="space-y-2">
+    <h2 className="text-xl font-semibold">{title}</h2>
+    <div className="text-text-muted space-y-2 leading-relaxed">{children}</div>
+  </section>
+);
 
-  return (
-    <AuthLayout>
-      <div className="w-full max-w-3xl my-10">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-emerald to-brand-blue mb-4 shadow-lg shadow-brand-emerald/20">
-            <FileText className="text-white" size={32} />
-          </div>
-          <h1 className="text-3xl font-bold text-text-main mb-2">Terms &amp; Conditions</h1>
-          <p className="text-text-muted">Last updated: October 28, 2026</p>
-        </div>
+const TermsPolicy: React.FC = () => (
+  <PublicLayout>
+    <article className="max-w-3xl mx-auto px-4 sm:px-6 py-16 space-y-8">
+      <header className="text-center">
+        <h1 className="text-4xl font-bold">Terms of Service</h1>
+        <p className="text-text-muted mt-2">Last updated: {LEGAL_LAST_UPDATED}</p>
+      </header>
 
-        <div className="glass-card p-8 space-y-6 text-left max-h-[70vh] overflow-y-auto text-text-main">
-          <section className="space-y-2">
-            <h2 className="text-xl font-semibold">1. Acceptance of Terms</h2>
-            <p className="text-text-muted">
-              By creating an account or using the platform, you agree to be bound by these Terms
-              and Conditions. If you do not accept these terms, please do not use the service.
-            </p>
-          </section>
+      <Section title="1. Acceptance of terms">
+        <p>By accessing or using {SITE_NAME} (the "Service"), you agree to these Terms of Service. If you do not agree, do not use the Service.</p>
+      </Section>
 
-          <section className="space-y-2">
-            <h2 className="text-xl font-semibold">2. Account Responsibility</h2>
-            <p className="text-text-muted">
-              You are responsible for maintaining the confidentiality of your login credentials
-              and for all activity that occurs under your account. Notify the administrator
-              immediately if you suspect unauthorized access.
-            </p>
-          </section>
+      <Section title="2. The Service">
+        <p>{SITE_NAME} is a web platform for managing video libraries, generating metadata, and scheduling and publishing videos to third-party platforms, including YouTube, Facebook, Instagram and TikTok, through their official APIs.</p>
+      </Section>
 
-          <section className="space-y-2">
-            <h2 className="text-xl font-semibold">3. Acceptable Use</h2>
-            <p className="text-text-muted">
-              You agree not to upload or distribute content that is unlawful, infringing,
-              defamatory, obscene, or that violates the rights of others. You will not attempt
-              to disrupt, probe, or reverse-engineer the service.
-            </p>
-          </section>
+      <Section title="3. Accounts">
+        <p>You must give accurate information and keep your login details confidential. You are responsible for all activity under your account. Tell us right away if you suspect unauthorised access.</p>
+      </Section>
 
-          <section className="space-y-2">
-            <h2 className="text-xl font-semibold">4. Content Ownership &amp; License</h2>
-            <p className="text-text-muted">
-              You retain ownership of the content you upload. By uploading, you grant the
-              platform a limited license to store, process, and display your content solely for
-              the purpose of providing the service.
-            </p>
-          </section>
+      <Section title="4. Acceptable use">
+        <p>You must not upload or publish content that is unlawful, infringing, defamatory, hateful, sexually explicit, misleading, or that violates the rights of others. You must not use the Service to send spam, manipulate engagement, or disrupt, probe or reverse-engineer the Service.</p>
+      </Section>
 
-          <section className="space-y-2">
-            <h2 className="text-xl font-semibold">5. Third-Party Platforms</h2>
-            <p className="text-text-muted">
-              Features that publish to YouTube, Facebook, Instagram, or other third parties are
-              governed by the terms of those services. You are responsible for complying with
-              their policies when connecting those accounts.
-            </p>
-          </section>
+      <Section title="5. Your content">
+        <p>You keep ownership of your content. You confirm that you have every right needed to upload and publish it. You give us a limited licence to store, process and transmit your content only to provide the Service.</p>
+      </Section>
 
-          <section className="space-y-2">
-            <h2 className="text-xl font-semibold">6. Service Availability</h2>
-            <p className="text-text-muted">
-              We strive for high availability, but the service is provided on an "as is" basis
-              without warranties of any kind. Scheduled maintenance or unforeseen issues may
-              temporarily affect access.
-            </p>
-          </section>
+      <Section title="6. Third-party platforms">
+        <p>When you connect and publish to YouTube, Facebook, Instagram or TikTok, you must also follow that platform's terms and community guidelines, including the TikTok Terms of Service and Community Guidelines and the YouTube Terms of Service. We publish content only when you take an explicit action or set a schedule. You can disconnect any platform at any time.</p>
+      </Section>
 
-          <section className="space-y-2">
-            <h2 className="text-xl font-semibold">7. Limitation of Liability</h2>
-            <p className="text-text-muted">
-              To the maximum extent permitted by law, the platform and its operators are not
-              liable for indirect, incidental, or consequential damages arising from your use of
-              the service.
-            </p>
-          </section>
+      <Section title="7. AI-generated metadata">
+        <p>Suggested titles, captions and hashtags are generated automatically and may contain errors. Review them before publishing. You are responsible for anything you publish.</p>
+      </Section>
 
-          <section className="space-y-2">
-            <h2 className="text-xl font-semibold">8. Termination</h2>
-            <p className="text-text-muted">
-              We may suspend or terminate accounts that violate these terms. You may stop using
-              the service at any time and request deletion of your account.
-            </p>
-          </section>
+      <Section title="8. Availability and warranties">
+        <p>The Service is provided "as is" and "as available", without warranties of any kind. Third-party API changes, maintenance or outages may affect features.</p>
+      </Section>
 
-          <section className="space-y-2">
-            <h2 className="text-xl font-semibold">9. Changes to Terms</h2>
-            <p className="text-text-muted">
-              These terms may be updated periodically. Continued use of the service after an
-              update constitutes acceptance of the revised terms.
-            </p>
-          </section>
+      <Section title="9. Limitation of liability">
+        <p>To the maximum extent the law allows, we are not liable for indirect, incidental, special or consequential damages, or for lost profits, data or reach, arising from your use of the Service.</p>
+      </Section>
 
-          <section className="space-y-2">
-            <h2 className="text-xl font-semibold">10. Governing Law</h2>
-            <p className="text-text-muted">
-              These terms are governed by the laws of the jurisdiction in which the platform
-              operator is established, without regard to conflict-of-laws principles.
-            </p>
-          </section>
-        </div>
+      <Section title="10. Termination">
+        <p>We may suspend or end accounts that violate these Terms. You may stop using the Service at any time and ask us to delete your account.</p>
+      </Section>
 
-        <div className="mt-6 flex justify-center">
-          <button
-            onClick={() => navigate(-1)}
-            className="btn-primary px-6 py-3 flex items-center gap-2"
-          >
-            <ArrowLeft size={16} />
-            Back
-          </button>
-        </div>
-      </div>
-    </AuthLayout>
-  );
-};
+      <Section title="11. Changes">
+        <p>We may update these Terms. If you keep using the Service after an update is posted, you accept the revised Terms.</p>
+      </Section>
+
+      <Section title="12. Governing law">
+        <p>These Terms are governed by the laws of India. The courts of India have exclusive jurisdiction over any dispute.</p>
+      </Section>
+
+      <Section title="13. Contact">
+        <p>Questions about these Terms: <a className="text-brand-emerald" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a></p>
+      </Section>
+    </article>
+  </PublicLayout>
+);
 
 export default TermsPolicy;
