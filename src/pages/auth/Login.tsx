@@ -6,6 +6,9 @@ import { Input } from '../../components/ui/Input';
 import { AuthLayout } from '../../components/auth/AuthLayout';
 import { useAuth } from '../../context/AuthContext';
 
+/** Google SSO is hidden for now; flip to true to bring the button back. */
+const SHOW_GOOGLE_SSO = false;
+
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const { login, googleLogin } = useAuth();
@@ -173,6 +176,8 @@ const Login: React.FC = () => {
             {submitting ? 'Signing in…' : 'Login'}
           </button>
 
+          {SHOW_GOOGLE_SSO && (
+          <>
           <div className="relative">
             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border-subtle"></div></div>
             <div className="relative flex justify-center text-xs uppercase"><span className="bg-bg-main px-2 text-text-muted transition-colors duration-300">Or continue with</span></div>
@@ -196,6 +201,8 @@ const Login: React.FC = () => {
             </svg>
             Google
           </button>
+          </>
+          )}
         </div>
 
         <p className="text-center mt-8 text-sm text-text-muted">
