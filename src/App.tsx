@@ -38,6 +38,7 @@ import NotificationsPage from './pages/dashboard/notifications/NotificationsPage
 import ProfilePage from './pages/dashboard/profile/ProfilePage';
 import AutomationPage from './pages/dashboard/automation/AutomationPage';
 import AutomationBuilderPage from './pages/dashboard/automation/AutomationBuilderPage';
+import AutoPostPage from './pages/dashboard/auto_post/AutoPostPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { get_profile } from './services/profile_service';
 import { RequireAuth } from './components/auth/RequireAuth';
@@ -170,6 +171,9 @@ export default function App() {
           <Route path="automation" element={<AutomationPage />} />
           <Route path="automation/new" element={<AutomationBuilderPage />} />
           <Route path="automation/:id/edit" element={<AutomationBuilderPage />} />
+
+          {/* Auto Post — AI text thoughts to Facebook on a schedule */}
+          <Route path="auto-post" element={<AutoPostPage />} />
 
           {/* Notifications */}
           <Route path="notifications" element={<NotificationsPage />} />

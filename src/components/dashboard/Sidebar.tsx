@@ -19,11 +19,13 @@ import {
   UploadCloud,
   Bell,
   Zap,
+  Send,
 } from 'lucide-react';
 import { fetch_unread_count } from '../../services/notification_service';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useOTT } from '../../context/OTTContext';
+import { usePlatformAccess } from '../../lib/platform_access';
 
 interface SidebarItemProps {
   icon: React.ElementType;
@@ -196,6 +198,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
   const location = useLocation();
   const { otts } = useOTT();
   const { is_authenticated } = useAuth();
+  const access = usePlatformAccess();
   const activeGroup = getOpenGroupForPath(location.pathname);
   const [openGroup, setOpenGroup] = useState<SidebarDropdownGroup>(() => getOpenGroupForPath(location.pathname));
   const [openRegisteredOttId, setOpenRegisteredOttId] = useState<string | null>(() => getRegisteredOttIdFromPath(location.pathname));
@@ -232,6 +235,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
     { icon: BarChart3, label: 'Analytics', path: '/dashboard/analytics' },
     { icon: Activity, label: 'Crons', path: '/dashboard/crons' },
     { icon: Zap, label: 'Automation', path: '/dashboard/automation' },
+    // Facebook-only feature — hidden for review accounts that can't use Facebook.
+    ...(access.is_allowed('facebook') ? [{ icon: Send, label: 'Auto Post', path: '/dashboard/auto-post' }] : []),
   ];
 
   useEffect(() => {
