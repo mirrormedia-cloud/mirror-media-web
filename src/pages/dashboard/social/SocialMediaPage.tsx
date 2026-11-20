@@ -10,7 +10,16 @@ import {
     CheckCircle2,
     AlertCircle,
     Clock,
+    X,
+    KeyRound,
+    AtSign,
 } from 'lucide-react';
+
+const TelegramIcon: React.FC<{ size?: number; className?: string }> = ({ size = 24, className }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
+        <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z" />
+    </svg>
+);
 
 const TikTokIcon: React.FC<{ size?: number; className?: string }> = ({ size = 24, className }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
@@ -20,6 +29,7 @@ const TikTokIcon: React.FC<{ size?: number; className?: string }> = ({ size = 24
 import toast from 'react-hot-toast';
 import { useConfirm } from '../../../components/ui/ConfirmDialog';
 import { usePlatformAccess } from '../../../lib/platform_access';
+import { Input } from '../../../components/ui/Input';
 import {
     social_service,
     SocialAccount,
@@ -68,6 +78,14 @@ const PLATFORMS: PlatformMeta[] = [
         iconColor: 'text-neutral-100',
         description: 'Upload videos to TikTok via the Content Posting API. Requires a TikTok Developer App.',
     },
+    {
+        key: 'telegram',
+        label: 'Telegram',
+        Icon: TelegramIcon,
+        accent: 'bg-sky-500/10',
+        iconColor: 'text-sky-400',
+        description: 'Post videos to a Telegram channel through your own bot (admin with "Post Messages" permission).',
+    },
 ];
 
 function pad2(n: number) { return String(n).padStart(2, '0'); }
@@ -95,6 +113,7 @@ const SocialMediaPage: React.FC = () => {
     const [loading, set_loading] = useState(false);
     const [busy_platform, set_busy_platform] = useState<SocialPlatform | null>(null);
     const [tick, set_tick] = useState(0);   // forces re-render every second for the countdown
+    const [telegram_open, set_telegram_open] = useState(false);
 
     const load = useCallback(async () => {
         set_loading(true);
@@ -129,6 +148,11 @@ const SocialMediaPage: React.FC = () => {
     }, [accounts]);
 
     const open_connect = useCallback(async (platform: SocialPlatform) => {
+        // Telegram has no OAuth popup — collect bot token + channel instead.
+        if (platform === 'telegram') {
+            set_telegram_open(true);
+            return;
+        }
         set_busy_platform(platform);
         try {
             const res = await social_service.get_connect_url(platform, 'app');
@@ -205,7 +229,7 @@ const SocialMediaPage: React.FC = () => {
                         <Plug size={24} className="text-brand-emerald" /> Social Accounts
                     </h2>
                     <p className="text-text-muted text-sm">
-                        Connect your YouTube, Facebook, Instagram, and TikTok accounts to publish library videos.
+                        Connect your YouTube, Facebook, Instagram, TikTok, and Telegram accounts to publish library videos.
                     </p>
                 </div>
                 <button
@@ -240,6 +264,143 @@ const SocialMediaPage: React.FC = () => {
                     ))}
                 </div>
             )}
+
+            <TelegramConnectModal
+                isOpen={telegram_open}
+                onClose={() => set_telegram_open(false)}
+                onConnected={() => { set_telegram_open(false); void load(); }}
+            />
+        </div>
+    );
+};
+
+// ── Telegram connect modal ──────────────────────────────────────────────
+
+const TelegramConnectModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    onConnected: () => void;
+}> = ({ isOpen, onClose, onConnected }) => {
+    const [bot_token, set_bot_token] = useState('');
+    const [channel, set_channel] = useState('');
+    const [show_token, set_show_token] = useState(false);
+    const [submitting, set_submitting] = useState(false);
+    const [error_msg, set_error_msg] = useState<string | null>(null);
+
+    // Reset on open. Hooks stay above the early return.
+    useEffect(() => {
+        if (!isOpen) return;
+        set_bot_token('');
+        set_channel('');
+        set_show_token(false);
+        set_submitting(false);
+        set_error_msg(null);
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    const handle_submit = async () => {
+        const token = bot_token.trim();
+        const ch = channel.trim();
+        if (!token) { set_error_msg('Bot token is required'); return; }
+        if (!/^\d+:[A-Za-z0-9_-]{20,}$/.test(token)) { set_error_msg('Bot token looks invalid — format is 123456:ABC…'); return; }
+        if (!ch) { set_error_msg('Channel username is required'); return; }
+        set_submitting(true);
+        set_error_msg(null);
+        try {
+            const res = await social_service.connect_telegram({
+                telegram_bot_token: token,
+                telegram_channel_username: ch,
+            });
+            if (!res.success) throw new Error(res.message || 'Verification failed');
+            toast.success(`Telegram connected${res.data?.account_name ? ` — ${res.data.account_name}` : ''}`);
+            onConnected();
+        } catch (err: any) {
+            const msg = err?.response?.data?.error?.message || err?.response?.data?.message || err?.message || 'Verification failed';
+            set_error_msg(msg);
+        } finally {
+            set_submitting(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !submitting && onClose()} />
+            <div className="relative w-full max-w-md bg-bg-main border border-border-subtle rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                <div className="flex items-center justify-between p-5 border-b border-border-subtle">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center">
+                            <TelegramIcon size={20} />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-text-main">Connect Telegram</h3>
+                            <p className="text-[11px] text-text-muted">We verify the bot can post to your channel.</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        disabled={submitting}
+                        className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-muted disabled:opacity-50"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
+
+                <form
+                    className="p-5 space-y-4"
+                    onSubmit={(e) => { e.preventDefault(); void handle_submit(); }}
+                >
+                    <ol className="text-[11px] text-text-muted space-y-1 list-decimal list-inside rounded-2xl border border-border-subtle bg-bg-surface p-3">
+                        <li>Create a bot with <span className="font-mono text-text-main">@BotFather</span> and copy its token.</li>
+                        <li>Add the bot to your channel as an <b>admin</b> with “Post Messages”.</li>
+                        <li>Enter the token and channel username below.</li>
+                    </ol>
+
+                    <Input
+                        label="Bot token"
+                        type={show_token ? 'text' : 'password'}
+                        placeholder="123456789:AAH…"
+                        icon={KeyRound}
+                        value={bot_token}
+                        onChange={(v) => { set_bot_token(v); set_error_msg(null); }}
+                        togglePassword={() => set_show_token(s => !s)}
+                        showPassword={show_token}
+                    />
+                    <Input
+                        label="Channel username"
+                        placeholder="@mychannel or https://t.me/mychannel"
+                        icon={AtSign}
+                        value={channel}
+                        onChange={(v) => { set_channel(v); set_error_msg(null); }}
+                    />
+
+                    {error_msg && (
+                        <div className="flex items-start gap-1.5 text-[12px] text-red-400">
+                            <AlertCircle size={13} className="mt-0.5 shrink-0" />
+                            <span>{error_msg}</span>
+                        </div>
+                    )}
+
+                    <div className="flex items-center justify-end gap-2 pt-1">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            disabled={submitting}
+                            className="px-4 py-2 rounded-xl border border-border-subtle text-text-muted hover:text-text-main text-xs font-bold disabled:opacity-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={submitting}
+                            className="btn-primary flex items-center gap-2 px-4 py-2 text-xs disabled:opacity-50"
+                        >
+                            {submitting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                            {submitting ? 'Verifying…' : 'Verify & Connect'}
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 };
@@ -324,7 +485,9 @@ const PlatformCard: React.FC<CardProps> = ({ meta, accounts, busy, on_connect, o
                                     ? (primary.channel_name ?? primary.account_name ?? '—')
                                     : platform === 'tiktok'
                                         ? (primary.account_name ?? primary.account_id ?? '—')
-                                        : (primary.page_name ?? primary.account_name ?? '—');
+                                        : platform === 'telegram'
+                                            ? (primary.channel_name ?? primary.account_name ?? primary.account_id ?? '—')
+                                            : (primary.page_name ?? primary.account_name ?? '—');
                             return (
                                 <p className="text-sm font-semibold text-text-main truncate" title={display_name}>
                                     {display_name}
@@ -332,6 +495,12 @@ const PlatformCard: React.FC<CardProps> = ({ meta, accounts, busy, on_connect, o
                             );
                         })()}
                     </div>
+                    {platform === 'telegram' && primary.metadata?.bot_username && (
+                        <div className="flex items-center justify-between gap-2">
+                            <p className="text-[10px] uppercase font-bold text-text-muted tracking-wider">via Bot</p>
+                            <p className="text-[11px] text-text-muted truncate">@{primary.metadata.bot_username}</p>
+                        </div>
+                    )}
                     {platform === 'instagram' && primary.page_name && (
                         <div className="flex items-center justify-between gap-2">
                             <p className="text-[10px] uppercase font-bold text-text-muted tracking-wider">via FB Page</p>

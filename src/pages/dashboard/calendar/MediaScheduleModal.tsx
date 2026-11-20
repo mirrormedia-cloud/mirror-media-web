@@ -47,7 +47,7 @@ interface Props {
     onSaved?: () => void;
 }
 
-type PlatformChoice = 'youtube' | 'facebook' | 'instagram' | 'tiktok' | 'all';
+type PlatformChoice = 'youtube' | 'facebook' | 'instagram' | 'tiktok' | 'telegram' | 'all';
 
 const PLATFORM_OPTIONS: SearchSelectOption[] = [
     { label: 'All', value: 'all' },
@@ -55,6 +55,7 @@ const PLATFORM_OPTIONS: SearchSelectOption[] = [
     { label: 'Facebook', value: 'facebook' },
     { label: 'Instagram', value: 'instagram' },
     { label: 'TikTok', value: 'tiktok' },
+    { label: 'Telegram', value: 'telegram' },
 ];
 
 function handle_platform_multi_change(
@@ -134,7 +135,7 @@ function days_between_inclusive(start: string, end: string): number {
 }
 
 function expand_platform(p: PlatformChoice[]): SupportedPlatform[] {
-    if (p.includes('all')) return ['youtube', 'facebook', 'instagram', 'tiktok'];
+    if (p.includes('all')) return ['youtube', 'facebook', 'instagram', 'tiktok', 'telegram'];
     return p as SupportedPlatform[];
 }
 

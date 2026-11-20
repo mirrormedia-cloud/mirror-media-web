@@ -52,6 +52,11 @@ const TikTokIcon: React.FC<{ size?: number; className?: string }> = ({ size = 24
         <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z" />
     </svg>
 );
+const TelegramIcon: React.FC<{ size?: number; className?: string }> = ({ size = 24, className }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
+        <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z" />
+    </svg>
+);
 import toast from 'react-hot-toast';
 import { usePlatformAccess } from '../../../lib/platform_access';
 import { social_service, SocialPlatform, SocialUploadRow } from '../../../services/social_service';
@@ -66,6 +71,7 @@ const PLATFORM_META: Record<SocialPlatform, { label: string; Icon: React.Compone
     facebook:  { label: 'Facebook',  Icon: Facebook,   tone: 'text-blue-500',    bg: 'bg-blue-500/10' },
     instagram: { label: 'Instagram', Icon: Instagram,  tone: 'text-purple-500',  bg: 'bg-purple-500/10' },
     tiktok:    { label: 'TikTok',    Icon: TikTokIcon, tone: 'text-neutral-100', bg: 'bg-neutral-500/10' },
+    telegram:  { label: 'Telegram',  Icon: TelegramIcon, tone: 'text-sky-400',   bg: 'bg-sky-500/10' },
 };
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string; dot: string }> = {
@@ -326,7 +332,7 @@ const SocialUploadsPage: React.FC = () => {
             {/* ── FILTER BAR ─────────────────────────────────────────── */}
             <div className="glass-card px-3 py-2 flex items-center gap-0 overflow-x-auto scrollbar-none justify-between">
                 <FilterGroup label="Platform" Icon={Globe}>
-                    {access.filter(['all', 'youtube', 'facebook', 'instagram', 'tiktok'] as const).map(k => (
+                    {access.filter(['all', 'youtube', 'facebook', 'instagram', 'tiktok', 'telegram'] as const).map(k => (
                         <FilterChip key={k} active={platform_filter === k} onClick={() => change_platform(k)}
                             Icon={k === 'all' ? undefined : PLATFORM_META[k].Icon}
                             iconTone={k === 'all' ? undefined : PLATFORM_META[k].tone}>

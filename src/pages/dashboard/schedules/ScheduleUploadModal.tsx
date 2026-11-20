@@ -477,7 +477,7 @@ const Step2Platforms: React.FC<{
             is_multi
             options={options}
             value={platforms as string[]}
-            on_change={(v) => on_change((v as string[]).filter(x => x === 'facebook' || x === 'youtube' || x === 'instagram' || x === 'tiktok') as SupportedPlatform[])}
+            on_change={(v) => on_change((v as string[]).filter(x => x === 'facebook' || x === 'youtube' || x === 'instagram' || x === 'tiktok' || x === 'telegram') as SupportedPlatform[])}
             placeholder="Pick platforms…"
         />
         <div className="grid grid-cols-3 gap-2">

@@ -5,7 +5,7 @@
 
 import { api_client, normalize_envelope, ServiceEnvelope } from "@/lib/api_client";
 
-export type SocialPlatform = "youtube" | "facebook" | "instagram" | "tiktok";
+export type SocialPlatform = "youtube" | "facebook" | "instagram" | "tiktok" | "telegram";
 
 export interface SocialAccount {
     id: string;
@@ -49,6 +49,15 @@ export const social_service = {
         return normalize_envelope(res.data);
     },
 
+    /**
+     * Telegram has no OAuth — the backend verifies the bot token is valid
+     * and the bot is an admin of the channel, then stores the account.
+     */
+    async connect_telegram(payload: { telegram_bot_token: string; telegram_channel_username: string }): Promise<ServiceEnvelope<SocialAccount>> {
+        const res = await api_client.post(`/api/social/telegram/connect`, payload);
+        return normalize_envelope(res.data);
+    },
+
     async get_status(platform: SocialPlatform): Promise<ServiceEnvelope<PlatformStatus>> {
         const res = await api_client.get(`/api/social/${platform}/status`);
         return normalize_envelope(res.data);
@@ -85,7 +94,7 @@ export const social_service = {
     async get_upload_stats(params: { platform?: SocialPlatform; status?: string } = {}): Promise<ServiceEnvelope<{
         total: number;
         by_status: Record<'draft' | 'scheduled' | 'uploading' | 'uploaded' | 'failed' | 'cancelled', number>;
-        by_platform: Record<'youtube' | 'facebook' | 'instagram' | 'tiktok', number>;
+        by_platform: Record<'youtube' | 'facebook' | 'instagram' | 'tiktok' | 'telegram', number>;
     }>> {
         const res = await api_client.get(`/api/social/uploads/stats`, { params });
         return normalize_envelope(res.data);

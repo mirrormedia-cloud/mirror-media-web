@@ -6,6 +6,7 @@ export const PLATFORM_OPTIONS: { value: SupportedPlatform; label: string; color:
     { value: 'facebook', label: 'Facebook', color: 'blue' },
     { value: 'instagram', label: 'Instagram', color: 'purple' },
     { value: 'tiktok', label: 'TikTok', color: 'neutral' },
+    { value: 'telegram', label: 'Telegram', color: 'sky' },
 ];
 
 export const FREQUENCY_OPTIONS: SearchSelectOption[] = [

@@ -27,6 +27,11 @@ const TikTokIcon: React.FC<{ size?: number; className?: string }> = ({ size = 24
         <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z" />
     </svg>
 );
+const TelegramIcon: React.FC<{ size?: number; className?: string }> = ({ size = 24, className }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
+        <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z" />
+    </svg>
+);
 import toast from 'react-hot-toast';
 import { LibraryItem } from '../../../types';
 import { Input } from '../../../components/ui/Input';
@@ -55,6 +60,7 @@ const PLATFORM_META: { key: SocialPlatform; label: string; Icon: React.Component
     { key: 'facebook', label: 'Facebook Page', Icon: Facebook, tone: 'text-blue-500' },
     { key: 'instagram', label: 'Instagram', Icon: Instagram, tone: 'text-purple-500' },
     { key: 'tiktok', label: 'TikTok', Icon: TikTokIcon, tone: 'text-neutral-100' },
+    { key: 'telegram', label: 'Telegram', Icon: TelegramIcon, tone: 'text-sky-400' },
 ];
 
 function pad2(n: number) { return String(n).padStart(2, '0'); }
@@ -295,6 +301,11 @@ const SocialUploadModal: React.FC<Props> = ({ isOpen, onClose, item }) => {
                         {platforms.includes('tiktok') && schedule_enabled && (
                             <p className="text-[11px] text-amber-400/80">
                                 TikTok does not support native scheduling via the Content Posting API — the video will be published immediately regardless of the schedule time.
+                            </p>
+                        )}
+                        {platforms.includes('telegram') && (
+                            <p className="text-[11px] text-sky-400/80">
+                                Telegram posts immediately with the <b>title only</b> as the caption. Videos up to 20 MB are sent by URL; up to 50 MB are uploaded directly.
                             </p>
                         )}
                     </section>
