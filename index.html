@@ -4,7 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Mirror Media Cloud</title>
-    <meta name="description" content="OTT library, social upload, scheduling and analytics automation platform." />
+    <meta name="description" content="Mirror Media Cloud is a cloud-based platform designed to manage, organize, store and access digital media content, and publish it to YouTube, Facebook, Instagram and TikTok." />
+    <meta property="og:site_name" content="Mirror Media Cloud" />
+    <meta property="og:title" content="Mirror Media Cloud – Media Management and Cloud Platform" />
+    <meta property="og:url" content="https://mirrormedia.space/" />
+    <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"WebSite","name":"Mirror Media Cloud","url":"https://mirrormedia.space/"}
+    </script>
 
     <!-- PWA manifest + theming -->
     <link rel="manifest" href="/manifest.json" />
@@ -24,7 +30,27 @@
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Static fallback for crawlers / no-JS (e.g. Google OAuth brand
+         verification). React's createRoot replaces it on load. Keep the
+         wording in sync with the hero in src/pages/public/Home.tsx. -->
+    <div id="root">
+      <main style="max-width:720px;margin:0 auto;padding:48px 16px;font-family:system-ui,sans-serif;line-height:1.6">
+        <h1>Mirror Media Cloud</h1>
+        <h2>Media Management and Cloud Platform</h2>
+        <p>Mirror Media Cloud is a cloud-based platform designed to manage, organize, store and access digital media content.</p>
+        <ul>
+          <li>Cloud media library: upload, organize and store videos and thumbnails.</li>
+          <li>AI metadata: generate titles, descriptions and tags you review before posting.</li>
+          <li>Publishing and scheduling to YouTube, Facebook, Instagram, TikTok and Telegram.</li>
+          <li>Analytics for the videos you publish, in one dashboard.</li>
+        </ul>
+        <p>
+          <a href="/privacy-policy">Privacy Policy</a> ·
+          <a href="/terms-policy">Terms of Service</a> ·
+          <a href="/contact">Contact Us</a>
+        </p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

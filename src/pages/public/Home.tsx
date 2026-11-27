@@ -8,7 +8,7 @@ import { PublicLayout } from '../../components/public/PublicLayout';
 import { SITE_NAME, CONTACT_EMAIL } from '../../lib/site';
 
 const FEATURES = [
-  { icon: Library, title: 'Central video library', body: 'Import episodes and clips from your OTT catalogues into one organised library, grouped by show and story.' },
+  { icon: Library, title: 'Cloud media library', body: 'Upload or import videos and thumbnails into secure cloud storage, organised by show and story, and access them from any device.' },
   { icon: Sparkles, title: 'AI metadata', body: 'Generate titles, descriptions, tags and hashtags for each platform from the video itself. You review and edit before anything is posted.' },
   { icon: CalendarClock, title: 'Scheduling & calendar', body: 'Plan uploads on a calendar, batch-schedule a series, and let the scheduler publish at the time you choose.' },
   { icon: UploadCloud, title: 'Multi-platform publishing', body: 'Publish the same video to YouTube, Instagram Reels, Facebook and TikTok, each with metadata suited to that platform.' },
@@ -44,15 +44,17 @@ const Home: React.FC = () => {
     <PublicLayout>
       {/* Hero */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-20 pb-16 text-center">
-        <p className="inline-block text-xs font-semibold uppercase tracking-wider text-brand-emerald bg-brand-emerald/10 rounded-full px-3 py-1 mb-6">
-          Video publishing for media teams
+        {/* Google OAuth brand verification: the H1 must be the exact OAuth
+            app name. Keep in sync with the static fallback in index.html. */}
+        <h1 className="text-5xl sm:text-6xl font-bold leading-tight">{SITE_NAME}</h1>
+        <p className="mt-3 text-xl sm:text-2xl font-semibold text-brand-emerald">
+          Media Management and Cloud Platform
         </p>
-        <h1 className="text-4xl sm:text-5xl font-bold leading-tight max-w-3xl mx-auto">
-          Manage, optimise and publish your videos to every platform from one place
-        </h1>
         <p className="mt-6 text-lg text-text-muted max-w-2xl mx-auto">
-          {SITE_NAME} turns your OTT video catalogue into ready-to-post content for YouTube,
-          Instagram, Facebook and TikTok, with AI-generated metadata, scheduling and analytics.
+          {SITE_NAME} is a cloud-based platform designed to manage, organize, store and access
+          digital media content. Keep your video library in the cloud, generate platform-ready
+          metadata with AI, and publish or schedule to YouTube, Instagram, Facebook and TikTok,
+          with analytics in one dashboard.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <a href="/#features" className="btn-primary px-6 py-3">Explore features</a>
@@ -60,6 +62,11 @@ const Home: React.FC = () => {
             Request a demo
           </Link>
         </div>
+        <nav aria-label="Legal" className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm">
+          <Link to="/privacy-policy" className="text-brand-emerald font-semibold hover:underline">Privacy Policy</Link>
+          <Link to="/terms-policy" className="text-brand-emerald font-semibold hover:underline">Terms of Service</Link>
+          <Link to="/contact" className="text-brand-emerald font-semibold hover:underline">Contact Us</Link>
+        </nav>
       </section>
 
       {/* Features */}
@@ -105,6 +112,27 @@ const Home: React.FC = () => {
           ))}
         </div>
         <div className="glass-card p-6 sm:p-8 mt-10 max-w-3xl mx-auto space-y-4">
+          <h3 className="text-xl font-semibold">YouTube integration</h3>
+          <p className="text-text-muted text-sm leading-relaxed">
+            {SITE_NAME} uses YouTube API Services. When you connect a channel with Google sign-in, we request:
+          </p>
+          <ul className="space-y-2 text-sm">
+            {[
+              ['youtube.upload', 'uploads the videos you select to your channel, with the title, description and privacy setting you choose.'],
+              ['youtube.force-ssl', 'shows your connected channel name and your videos\' view, like and comment counts in Analytics, and removes a video uploaded through Mirror Media Cloud if YouTube rejects it for copyright.'],
+            ].map(([scope, why]) => (
+              <li key={scope} className="flex gap-2">
+                <CheckCircle2 size={16} className="text-brand-emerald shrink-0 mt-0.5" />
+                <span><code className="font-mono text-brand-emerald">{scope}</code> {why}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="text-text-muted text-sm">
+            Our use of data from Google APIs follows the Google API Services User Data Policy, including the
+            Limited Use requirements. See our <Link to="/privacy-policy" className="text-brand-emerald font-semibold">Privacy Policy</Link>.
+          </p>
+        </div>
+        <div className="glass-card p-6 sm:p-8 mt-6 max-w-3xl mx-auto space-y-4">
           <h3 className="text-xl font-semibold">TikTok integration</h3>
           <p className="text-text-muted text-sm leading-relaxed">
             {SITE_NAME} uses TikTok Login Kit and the Content Posting API. We request only these permissions:

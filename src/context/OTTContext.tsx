@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { OttPlatformSummary } from '../types';
 import { ott_service, OTT_LIST_UPDATED_EVENT, notify_ott_list_updated } from '../services/ott_service';
+import { get_auth_token, AUTH_TOKEN_CHANGED_EVENT } from '../lib/api_client';
 
 interface OTTContextType {
   otts: OttPlatformSummary[];
@@ -18,6 +19,14 @@ export const OTTProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [error, set_error] = useState<string | null>(null);
 
   const refresh_otts = useCallback(async () => {
+    // This provider wraps the whole app (incl. login / public pages).
+    // Don't call the protected /api/ott until someone is logged in.
+    if (!get_auth_token()) {
+      set_otts([]);
+      set_error(null);
+      set_loading(false);
+      return;
+    }
     set_loading(true);
     set_error(null);
     try {
@@ -39,7 +48,12 @@ export const OTTProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     const handler = () => refresh_otts();
     window.addEventListener(OTT_LIST_UPDATED_EVENT, handler);
-    return () => window.removeEventListener(OTT_LIST_UPDATED_EVENT, handler);
+    // Load right after login; clear on logout / expired session.
+    window.addEventListener(AUTH_TOKEN_CHANGED_EVENT, handler);
+    return () => {
+      window.removeEventListener(OTT_LIST_UPDATED_EVENT, handler);
+      window.removeEventListener(AUTH_TOKEN_CHANGED_EVENT, handler);
+    };
   }, [refresh_otts]);
 
   const remove_ott = useCallback(async (ott_id: string) => {

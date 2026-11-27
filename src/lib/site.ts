@@ -8,4 +8,4 @@
 export const SITE_NAME = 'Mirror Media Cloud';
 export const CONTACT_EMAIL: string =
   import.meta.env.VITE_CONTACT_EMAIL ?? 'mirror.mediacloud@gmail.com';
-export const LEGAL_LAST_UPDATED = 'November 15, 2026';
+export const LEGAL_LAST_UPDATED = 'November 27, 2026';

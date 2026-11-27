@@ -36,10 +36,15 @@ export function get_auth_token(): string | null {
     return typeof window === "undefined" ? null : window.localStorage.getItem(AUTH_TOKEN_KEY);
 }
 
+/** Fired on window whenever the JWT is set or cleared (login / logout / 401). */
+export const AUTH_TOKEN_CHANGED_EVENT = "mmc:auth-token-changed";
+
 export function set_auth_token(token: string | null) {
     if (typeof window === "undefined") return;
+    const prev = window.localStorage.getItem(AUTH_TOKEN_KEY);
     if (token) window.localStorage.setItem(AUTH_TOKEN_KEY, token);
     else window.localStorage.removeItem(AUTH_TOKEN_KEY);
+    if (prev !== token) window.dispatchEvent(new Event(AUTH_TOKEN_CHANGED_EVENT));
 }
 
 api_client.interceptors.request.use((config) => {
