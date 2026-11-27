@@ -3095,6 +3095,16 @@ const FileListView: React.FC<{ ott_id: string; story_key: string }> = ({ ott_id,
                 on_delete={handle_bulk_delete}
                 on_download={handle_bulk_download}
                 on_schedule={selection.selected_count > 0 ? open_schedule_wizard : undefined}
+                on_share_social={(() => {
+                    // Exactly one ready file (no folders) → open the social
+                    // upload modal for it. Covers Local Uploads, which is
+                    // always in files view and so never shows the card ➤ button.
+                    if (selection.selected_count !== 1 || selected_subfolder_keys.size > 0) return undefined;
+                    const id = Array.from(selection.selected_ids)[0];
+                    const item = id ? items.find(i => i.id === id) : null;
+                    if (!item?.file_url) return undefined;
+                    return () => { set_social_item(item); set_social_open(true); };
+                })()}
                 busy={bulk_deleting}
                 download_busy={download_busy}
                 download_progress={download_progress ?? undefined}

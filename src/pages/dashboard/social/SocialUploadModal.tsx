@@ -20,6 +20,7 @@ import {
     Clock,
     Send,
     Sparkles,
+    ExternalLink,
 } from 'lucide-react';
 
 const TikTokIcon: React.FC<{ size?: number; className?: string }> = ({ size = 24, className }) => (
@@ -317,7 +318,7 @@ const SocialUploadModal: React.FC<Props> = ({ isOpen, onClose, item }) => {
                         )}
                         {platforms.includes('tiktok') && schedule_enabled && (
                             <p className="text-[11px] text-amber-400/80">
-                                TikTok does not support native scheduling via the Content Posting API — the video will be published immediately regardless of the schedule time.
+                                TikTok has no built-in scheduling, so we hold the post on our server and publish it to TikTok automatically at the chosen time, using the settings you pick below.
                             </p>
                         )}
                         {platforms.includes('telegram') && (
@@ -462,7 +463,7 @@ const SocialUploadModal: React.FC<Props> = ({ isOpen, onClose, item }) => {
                                             <Icon size={18} className={meta?.tone ?? 'text-text-muted'} />
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-sm font-bold text-text-main capitalize">{r.platform} — {r.status}</p>
-                                                {r.media_url && (
+                                                {r.media_url && r.platform !== 'tiktok' && (
                                                     <a
                                                         href={r.media_url}
                                                         target="_blank"
@@ -477,11 +478,32 @@ const SocialUploadModal: React.FC<Props> = ({ isOpen, onClose, item }) => {
                                                         <Clock size={10} /> Scheduled for {new Date(r.scheduledAt).toLocaleString()}
                                                     </p>
                                                 )}
-                                                {r.platform === 'tiktok' && ok && (
-                                                    <p className="text-[11px] text-text-muted mt-0.5">
-                                                        Posted to TikTok. It may take a few minutes to process and appear on your profile.
-                                                    </p>
-                                                )}
+                                                {r.platform === 'tiktok' && ok && (() => {
+                                                    const username = tt_meta.info?.creator_username;
+                                                    const profile_url = username ? `https://www.tiktok.com/@${username}` : null;
+                                                    const scheduled = r.status === 'scheduled';
+                                                    return (
+                                                        <div className="mt-1.5 space-y-2">
+                                                            <p className="text-[12px] font-semibold text-brand-emerald">
+                                                                {scheduled
+                                                                    ? `Scheduled successfully — it will be posted to TikTok${r.scheduledAt ? ` on ${new Date(r.scheduledAt).toLocaleString()}` : ''}.`
+                                                                    : 'Posted to TikTok successfully! It may take a few minutes to process and appear on your profile.'}
+                                                            </p>
+                                                            {(r.media_url || profile_url) && (
+                                                                <a
+                                                                    href={(!scheduled && r.media_url) || profile_url || r.media_url!}
+                                                                    target="_blank"
+                                                                    rel="noreferrer"
+                                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-900 text-white text-xs font-bold border border-white/10 hover:bg-neutral-800"
+                                                                >
+                                                                    <TikTokIcon size={13} />
+                                                                    Check on TikTok
+                                                                    <ExternalLink size={12} />
+                                                                </a>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })()}
                                                 {r.error_message && (
                                                     <p className="text-[11px] text-red-300 flex items-start gap-1 mt-0.5">
                                                         <AlertTriangle size={10} className="mt-0.5 shrink-0" /> {r.error_message}

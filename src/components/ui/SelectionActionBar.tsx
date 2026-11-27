@@ -12,7 +12,7 @@
 
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Trash2, Download, X, Loader2, CalendarDays } from "lucide-react";
+import { Trash2, Download, X, Loader2, CalendarDays, Send } from "lucide-react";
 
 interface Props {
     count: number;
@@ -22,6 +22,9 @@ interface Props {
     /** When set, renders a "Schedule Upload" button before the destructive
      *  actions. Used by the library to launch the schedule wizard. */
     on_schedule?: () => void;
+    /** When set, renders an "Upload to Social" button (opens the social
+     *  upload modal for the single selected item). */
+    on_share_social?: () => void;
     /** Override the default "X items selected" copy. */
     label?: string;
     /** When true, dim and lock the delete / schedule buttons (e.g. while a
@@ -35,7 +38,7 @@ interface Props {
 }
 
 export const SelectionActionBar: React.FC<Props> = ({
-    count, on_clear, on_delete, on_download, on_schedule, label,
+    count, on_clear, on_delete, on_download, on_schedule, on_share_social, label,
     busy = false, download_busy = false, download_progress,
 }) => {
     // Animate in/out with a tiny mount delay so the entrance transition
@@ -74,6 +77,19 @@ export const SelectionActionBar: React.FC<Props> = ({
                 </span>
 
                 <span className="h-5 w-px bg-border-subtle" />
+
+                {on_share_social && (
+                    <button
+                        type="button"
+                        onClick={on_share_social}
+                        disabled={busy}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-brand-emerald hover:bg-brand-emerald/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        title="Upload to social media"
+                    >
+                        <Send size={14} />
+                        Upload to Social
+                    </button>
+                )}
 
                 {on_schedule && (
                     <button

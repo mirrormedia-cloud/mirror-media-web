@@ -202,7 +202,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({ item, ott_id, selected
                         <button
                             onClick={on_share_social}
                             className={action_btn_class + ' text-brand-emerald hover:text-brand-emerald'}
-                            title="Upload / schedule to YouTube, Facebook, Instagram"
+                            title="Upload to social media"
                         >
                             <Send size={14} />
                         </button>
