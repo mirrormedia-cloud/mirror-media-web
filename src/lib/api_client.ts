@@ -18,6 +18,10 @@ export const api_client = axios.create({
     timeout: 0,
     headers: {
         "Content-Type": "application/json",
+        // ngrok free tier answers browser requests with an HTML warning page
+        // (no CORS headers) unless this header is sent — the browser then
+        // reports a CORS error. Ignored by every non-ngrok server.
+        "ngrok-skip-browser-warning": "true",
     },
 });
 

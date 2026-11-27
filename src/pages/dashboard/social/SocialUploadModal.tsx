@@ -42,6 +42,13 @@ import { useConfirm } from '../../../components/ui/ConfirmDialog';
 import { usePlatformAccess } from '../../../lib/platform_access';
 import { social_service, SocialPlatform, SocialUploadRow } from '../../../services/social_service';
 import { media_analysis_service, AnalysisPlatform } from '../../../services/media_analysis_service';
+import TikTokPostPanel, {
+    EMPTY_TIKTOK_SETTINGS,
+    TikTokPanelMeta,
+    TikTokPostSettings,
+    to_tiktok_upload_options,
+    validate_tiktok_settings,
+} from './TikTokPostPanel';
 
 interface Props {
     isOpen: boolean;
@@ -100,6 +107,9 @@ const SocialUploadModal: React.FC<Props> = ({ isOpen, onClose, item }) => {
      * the user typed always win.
      */
     const [auto_details, set_auto_details] = useState(false);
+    /** TikTok post panel state (TikTok Content Sharing Guidelines). */
+    const [tt_settings, set_tt_settings] = useState<TikTokPostSettings>(EMPTY_TIKTOK_SETTINGS);
+    const [tt_meta, set_tt_meta] = useState<TikTokPanelMeta>({ info: null, loading: true, load_error: null, duration_sec: null });
 
     // Reset on open with sensible defaults from the library item.
     useEffect(() => {
@@ -117,6 +127,8 @@ const SocialUploadModal: React.FC<Props> = ({ isOpen, onClose, item }) => {
         set_results(null);
         set_analyzing(null);
         set_auto_details(false);
+        // TikTok privacy must never be pre-selected — reset every open.
+        set_tt_settings(EMPTY_TIKTOK_SETTINGS);
     }, [isOpen, item, default_platform]);
 
     /**
@@ -177,6 +189,10 @@ const SocialUploadModal: React.FC<Props> = ({ isOpen, onClose, item }) => {
         // backend will generate one from Gemini per platform.
         if (!auto_details && !title.trim()) return 'Title is required (or turn on Auto Details)';
         if (!media_ready) return 'This library item has no file_url — upload to R2 first.';
+        if (platforms.includes('tiktok')) {
+            const tt_err = validate_tiktok_settings(tt_settings, tt_meta);
+            if (tt_err) return `TikTok: ${tt_err}`;
+        }
         if (schedule_enabled) {
             if (!schedule_date) return 'Schedule date is required';
             const iso = combine_iso(schedule_date, schedule_time);
@@ -213,6 +229,7 @@ const SocialUploadModal: React.FC<Props> = ({ isOpen, onClose, item }) => {
                     tags: tags.length > 0 ? tags : undefined,
                     hashtags: hashtags.length > 0 ? hashtags : undefined,
                 } : undefined,
+                tiktok_options: platforms.includes('tiktok') ? to_tiktok_upload_options(tt_settings) : undefined,
             });
             if (!res.success || !res.data) throw new Error(res.message || 'Upload failed');
             set_results(res.data.uploads);
@@ -310,6 +327,16 @@ const SocialUploadModal: React.FC<Props> = ({ isOpen, onClose, item }) => {
                         )}
                     </section>
 
+                    {/* TikTok — compliant post settings (privacy, interactions, disclosure, consent) */}
+                    {platforms.includes('tiktok') && (
+                        <TikTokPostPanel
+                            video_url={item.playback_url || item.file_url}
+                            value={tt_settings}
+                            onChange={set_tt_settings}
+                            onMeta={set_tt_meta}
+                        />
+                    )}
+
                     {/* AI analyze — generates platform-specific title/description/tags/hashtags */}
                     <section className="space-y-2">
                         <div className="flex items-center justify-between">
@@ -391,6 +418,7 @@ const SocialUploadModal: React.FC<Props> = ({ isOpen, onClose, item }) => {
                         </div>
                         <p className="text-[10px] text-text-muted">
                             When you schedule an upload, YouTube keeps it private until the publish time and flips it then.
+                            {platforms.includes('tiktok') && ' TikTok uses the privacy you choose in TikTok post settings above.'}
                         </p>
                     </div>
 
@@ -447,6 +475,11 @@ const SocialUploadModal: React.FC<Props> = ({ isOpen, onClose, item }) => {
                                                 {r.scheduledAt && (
                                                     <p className="text-[11px] text-text-muted flex items-center gap-1 mt-0.5">
                                                         <Clock size={10} /> Scheduled for {new Date(r.scheduledAt).toLocaleString()}
+                                                    </p>
+                                                )}
+                                                {r.platform === 'tiktok' && ok && (
+                                                    <p className="text-[11px] text-text-muted mt-0.5">
+                                                        Posted to TikTok. It may take a few minutes to process and appear on your profile.
                                                     </p>
                                                 )}
                                                 {r.error_message && (

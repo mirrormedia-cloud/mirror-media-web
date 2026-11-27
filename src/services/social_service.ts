@@ -58,6 +58,15 @@ export const social_service = {
         return normalize_envelope(res.data);
     },
 
+    /**
+     * Fresh TikTok creator_info for the post panel: nickname/avatar,
+     * allowed privacy levels, interaction limits, max video duration.
+     */
+    async get_tiktok_creator_info(): Promise<ServiceEnvelope<TikTokCreatorInfo>> {
+        const res = await api_client.get(`/api/social/tiktok/creator_info`);
+        return normalize_envelope(res.data);
+    },
+
     async get_status(platform: SocialPlatform): Promise<ServiceEnvelope<PlatformStatus>> {
         const res = await api_client.get(`/api/social/${platform}/status`);
         return normalize_envelope(res.data);
@@ -148,6 +157,33 @@ export interface CopyrightSweepResult {
     outcomes: CopyrightCheckOutcome[];
 }
 
+// ── TikTok post settings ───────────────────────────────────────────────
+
+export type TikTokPrivacyLevel = "PUBLIC_TO_EVERYONE" | "MUTUAL_FOLLOW_FRIENDS" | "FOLLOWER_OF_CREATOR" | "SELF_ONLY";
+
+export interface TikTokCreatorInfo {
+    account_id: string;
+    creator_available: boolean;
+    creator_avatar_url: string | null;
+    creator_username: string | null;
+    creator_nickname: string | null;
+    privacy_level_options: TikTokPrivacyLevel[];
+    comment_disabled: boolean;
+    duet_disabled: boolean;
+    stitch_disabled: boolean;
+    max_video_post_duration_sec: number | null;
+}
+
+/** What the creator picked in the TikTok post panel — sent with the upload. */
+export interface TikTokUploadOptions {
+    privacy_level: TikTokPrivacyLevel;
+    allow_comment: boolean;
+    allow_duet: boolean;
+    allow_stitch: boolean;
+    brand_organic_toggle: boolean;
+    brand_content_toggle: boolean;
+}
+
 // ── Upload types ───────────────────────────────────────────────────────
 
 export interface SocialUploadManualDetails {
@@ -175,6 +211,8 @@ export interface SocialUploadPayload {
     auto_details?: boolean;
     /** Manual values that override the generated ones, per-field. */
     manual_details?: SocialUploadManualDetails;
+    /** TikTok post panel choices (required by TikTok's sharing guidelines). */
+    tiktok_options?: TikTokUploadOptions;
 }
 
 export interface SocialUploadRow {
